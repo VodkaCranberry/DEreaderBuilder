@@ -1,0 +1,796 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>德语阅读生成器与AI助教</title>
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+  <style>
+    /* ========== 全局默认纯净黑夜模式 ========== */
+    * { box-sizing: border-box; transition: background-color 0.2s, border-color 0.2s; }
+    body { margin: 0; padding: 0; background-color: #121212; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; color: #e5e7eb; }
+    
+    .app-container {
+      display: flex; flex-direction: row; flex-wrap: nowrap; 
+      width: 100vw; height: 100vh; overflow: hidden;
+    }
+
+    /* ========== 左侧边栏 ========== */
+    .sidebar {
+      width: 400px; min-width: 400px; flex-shrink: 0; 
+      background-color: #1e1e1e; border-right: 1px solid #333;
+      padding: 24px; display: flex; flex-direction: column; gap: 20px;
+      box-shadow: 2px 0 8px rgba(0,0,0,0.5); height: 100%; overflow-y: auto;
+    }
+    
+    .sidebar h2 { margin: 0; font-size: 22px; color: #818cf8; }
+    .config-section, .input-section, .vocab-section { display: flex; flex-direction: column; gap: 10px; }
+    .sidebar h3 { margin: 0; font-size: 15px; color: #9ca3af; border-bottom: 1px solid #333; padding-bottom: 6px; }
+    
+    input[type="text"], input[type="number"], input[type="password"], select, textarea {
+      width: 100%; padding: 10px; border: 1px solid #444; border-radius: 6px;
+      font-size: 14px; background-color: #2c2c2c; color: #e5e7eb; transition: 0.2s; resize: vertical;
+    }
+    input:focus, select:focus, textarea:focus { border-color: #818cf8; outline: none; }
+    .label-text { font-size: 13px; color: #d1d5db; font-weight: 500; margin-bottom: 6px; display: block;}
+    
+    /* ========== 按钮样式 ========== */
+    .btn-primary { background-color: #4f46e5; color: white; border: none; padding: 10px; border-radius: 6px; font-weight: 600; cursor: pointer; transition: 0.2s; }
+    .btn-primary:hover { background-color: #4338ca; }
+    .btn-primary:disabled { background-color: #4b5563; color: #9ca3af; cursor: not-allowed; opacity: 0.8; }
+    
+    .btn-secondary { background-color: transparent; color: #d1d5db; border: 1px solid #555; padding: 10px; border-radius: 6px; font-weight: 600; cursor: pointer; transition: 0.2s; }
+    .btn-secondary:hover { background-color: #333; }
+    .btn-secondary:disabled { color: #6b7280; border-color: #444; cursor: not-allowed;}
+
+    .flex-row { display: flex; gap: 12px; align-items: flex-start; }
+    .flex-row input, .flex-row select { flex: 1; }
+    
+    /* ========== 生词本列表样式 ========== */
+    .dict-result-box { background: #2c2c2c; border: 1px solid #444; border-radius: 8px; padding: 12px; font-size: 14px; line-height: 1.6; max-height: 300px; overflow-y: auto; }
+    .dict-item { margin-bottom: 8px; }
+    .vocab-list-container { display: flex; flex-direction: column; gap: 8px; max-height: 250px; overflow-y: auto; padding: 4px 0; }
+    .vocab-list-item { display: flex; justify-content: space-between; align-items: center; background: #2c2c2c; border: 1px solid #444; padding: 8px 12px; border-radius: 6px; font-size: 14px; transition: 0.2s; }
+    .vocab-list-item:hover { border-color: #818cf8; }
+    .vocab-list-item-text { font-weight: bold; color: #818cf8; }
+    .vocab-header { display: flex; justify-content: space-between; align-items: center; }
+    .vocab-header h4 { margin: 0; font-size: 14px; color: #d1d5db; }
+    .vocab-actions { display: flex; gap: 12px; }
+    .btn-text { background: none; border: none; color: #818cf8; cursor: pointer; font-size: 13px; padding: 0; }
+    .btn-text.danger { color: #ef4444; font-size: 16px; font-weight: bold; padding: 0 4px; }
+    .btn-text.danger:hover { background: #7f1d1d; border-radius: 4px; }
+
+    /* ========== 右侧主内容区 ========== */
+    .main-content {
+      flex-grow: 1; flex-shrink: 1; min-width: 0; 
+      height: 100%; overflow-y: auto; padding: 40px; display: flex; flex-direction: column; align-items: center;
+    }
+    
+    .view-tabs { display: flex; gap: 16px; margin-bottom: 24px; width: 100%; max-width: 800px; }
+    .view-tab { padding: 10px 20px; font-size: 16px; font-weight: 600; border: none; background: transparent; cursor: pointer; border-bottom: 3px solid transparent; color: #9ca3af; transition: 0.2s;}
+    .view-tab.active { color: #818cf8; border-bottom-color: #818cf8; }
+    .view-tab:hover:not(.active) { color: #e5e7eb; }
+
+    .article-card, .quiz-card, .vocab-practice-card {
+      width: 100%; max-width: 800px; background: #1e1e1e; padding: 40px;
+      border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); margin-bottom: 24px;
+    }
+    .article-body { font-size: 18px; line-height: 2.0; letter-spacing: 0.5px; word-wrap: break-word; overflow-wrap: break-word; color: #e5e7eb; }
+
+    /* ========== 阅读理解题样式 ========== */
+    .quiz-item { margin-bottom: 24px; padding-bottom: 20px; border-bottom: 1px solid #333; }
+    .quiz-options label { display: block; margin: 10px 0; cursor: pointer; font-size: 16px; color: #d1d5db; }
+    .result-box { padding: 12px 16px; border-radius: 8px; margin-top: 12px; background-color: #2c2c2c; }
+    .result-box p { margin: 4px 0; }
+
+    /* ========== 背单词测试区样式 ========== */
+    .vocab-row { display: flex; align-items: center; gap: 16px; margin-bottom: 16px; padding: 12px; background: #2c2c2c; border-radius: 8px; border: 1px solid #444; }
+    .vocab-zh { flex: 1; font-size: 16px; font-weight: bold; color: #d1d5db;}
+    .vocab-de-input { flex: 1; padding: 10px; font-size: 16px; border: 2px solid #555; background-color: #121212; border-radius: 6px; outline: none; transition: 0.2s; }
+    .vocab-de-input.correct { border-color: #059669 !important; background-color: #064e3b !important; color: #a7f3d0 !important; }
+    .vocab-de-input.incorrect { border-color: #dc2626 !important; background-color: #7f1d1d !important; color: #fecaca !important; }
+    .status-icon { font-size: 20px; width: 24px; text-align: center; }
+
+    /* ========== 完形填空区样式 ========== */
+    .cloze-container { line-height: 2.8; font-size: 18px; color: #e5e7eb; }
+    .cloze-input-wrapper { display: inline-flex; align-items: center; gap: 6px; margin: 4px 6px; vertical-align: middle; white-space: nowrap; }
+    .cloze-input { width: 140px; padding: 6px 10px; font-size: 16px; border: 2px solid #555; background-color: #2c2c2c; color: #e5e7eb; border-radius: 6px; outline: none; transition: 0.2s; }
+    .cloze-input:focus { border-color: #818cf8; }
+    .cloze-input.correct { border-color: #059669; background-color: #064e3b; color: #a7f3d0; }
+    .cloze-input.incorrect { border-color: #dc2626; background-color: #7f1d1d; color: #fecaca; }
+    .cloze-hint { font-size: 0.9em; color: #9ca3af; font-weight: 500; white-space: nowrap; }
+
+    /* ========== 悬浮组件 (划词翻译与答疑) ========== */
+    .translation-tooltip { position: fixed; transform: translateX(-50%); background: #1e1e1e; border: 1px solid #444; border-radius: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); width: max-content; max-width: 420px; z-index: 1000; color: #e5e7eb; }
+    .tooltip-header { background: #2c2c2c; padding: 6px 12px; display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: #9ca3af; border-bottom: 1px solid #444; border-radius: 8px 8px 0 0; }
+    .tooltip-close { background: none; border: none; cursor: pointer; font-size: 16px; color: #9ca3af; }
+    .tooltip-content { padding: 12px; font-size: 14px; line-height: 1.6; max-height: 350px; overflow-y: auto; white-space: pre-wrap; }
+    
+    .floating-container { position: fixed; bottom: 30px; right: 30px; display: flex; flex-direction: column; align-items: flex-end; gap: 16px; z-index: 999; }
+    .floating-ball { width: 56px; height: 56px; border-radius: 50%; background-color: #4f46e5; color: white; border: none; font-size: 24px; cursor: pointer; box-shadow: 0 4px 14px rgba(79, 70, 229, 0.4); display: flex; align-items: center; justify-content: center; }
+    .chat-panel { width: 380px; height: 500px; background: #1e1e1e; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); display: flex; flex-direction: column; border: 1px solid #444; overflow: hidden; }
+    .chat-header { background: #4f46e5; color: white; padding: 14px 16px; font-weight: 600; display: flex; justify-content: space-between; align-items: center; }
+    .chat-messages { flex: 1; padding: 16px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; background-color: #121212; }
+    .chat-message { display: flex; max-width: 85%; }
+    .chat-message.user { align-self: flex-end; }
+    .chat-message.assistant { align-self: flex-start; }
+    .message-content { padding: 10px 14px; border-radius: 8px; font-size: 14px; line-height: 1.5; white-space: pre-wrap; }
+    .user .message-content { background-color: #4f46e5; color: white; border-bottom-right-radius: 0; }
+    .assistant .message-content { background-color: #2c2c2c; border: 1px solid #444; border-bottom-left-radius: 0; color: #e5e7eb; }
+    .chat-footer { padding: 12px; border-top: 1px solid #333; display: flex; gap: 8px; background: #1e1e1e; }
+    .chat-footer input { flex: 1; }
+  </style>
+</head>
+<body>
+
+<div id="app" class="app-container">
+  
+  <aside class="sidebar">
+    <h2>DE-Reader Builder</h2>
+    
+    <div class="config-section">
+      <h3>1. API 配置</h3>
+      <input v-model="config.baseUrl" type="text" placeholder="API Base URL" />
+      <input v-model="config.apiKey" type="password" placeholder="输入 API Key" />
+    </div>
+
+    <div class="input-section">
+      <h3>2. 阅读生成</h3>
+      <div class="flex-row">
+        <div style="flex: 1;">
+            <span class="label-text">难度等级</span>
+            <select v-model="settings.level">
+                <option v-for="lvl in ['A1', 'A2', 'B1', 'B2', 'C1', 'C2']" :key="lvl" :value="lvl">{{ lvl }}</option>
+            </select>
+        </div>
+        <div style="flex: 1;">
+            <span class="label-text">目标词数</span>
+            <input v-model.number="settings.wordCount" type="number" step="50" min="50" max="2000" />
+        </div>
+      </div>
+      
+      <div class="label-text" style="margin-top: 8px;">根据提示词生成：</div>
+      <input v-model="settings.topic" type="text" placeholder="输入你想阅读的主题，例如：柏林墙的历史" />
+      <button :disabled="isGeneratingArticle" @click="generateArticleWithTopic" class="btn-secondary" style="margin-top: 4px;">
+        ✨ 根据提示词生成 {{ settings.level }} 文章
+      </button>
+
+      <div class="label-text" style="margin-top: 8px;">基于单词库生成：</div>
+      <textarea v-model="settings.words" placeholder="输入你想复习的德文（每行一个）" rows="3"></textarea>
+      <button :disabled="isGeneratingArticle" @click="generateArticleWithWords" class="btn-primary">
+        {{ isGeneratingArticle ? '正在生成...' : '基于上方单词生成文章' }}
+      </button>
+      <button @click="startVocabPractice" class="btn-secondary" style="margin-top: 8px;">🧠 开启背单词测试</button>
+
+      <div class="label-text" style="margin-top: 12px; border-top: 1px dashed #444; padding-top: 12px;">自动生成阅读理解题：</div>
+      <div class="flex-row" style="align-items: center;">
+         <input type="number" v-model.number="settings.questionCount" min="1" max="10" placeholder="题目数量" style="width: 80px;" />
+         <button @click="generateQuestions" class="btn-secondary" :disabled="!articleResult || isGeneratingQuestions" style="flex: 1;">
+             {{ isGeneratingQuestions ? '生成中...' : '📝 出题' }}
+         </button>
+      </div>
+      <button @click="generateCloze" class="btn-secondary" :disabled="!articleResult || isGeneratingCloze" style="margin-top: 8px; width: 100%;">
+          {{ isGeneratingCloze ? '正在智能挖空...' : '🕳️ 抽取原文生成完形填空' }}
+      </button>
+    </div>
+
+    <div class="vocab-section">
+      <h3>3. 查词与生词本</h3>
+      <div class="flex-row" style="align-items: center;">
+        <input v-model="dictInput" @keyup.enter="lookupWord" type="text" placeholder="输入不认识的单词..." />
+        <button @click="lookupWord" class="btn-secondary" :disabled="isDictLoading">查询</button>
+      </div>
+      
+      <div v-if="dictResult || isDictLoading" class="dict-result-box">
+        <div v-if="isDictLoading" style="color: #818cf8;">正在查阅词典...</div>
+        <div v-else>
+          <div v-html="formattedDictResult"></div>
+          <button @click="addDictWordToVocab" class="btn-primary" style="width: 100%; margin-top: 10px; padding: 6px;">➕ 提取原形并加入生词本</button>
+        </div>
+      </div>
+
+      <div v-if="vocabList.length > 0">
+        <div class="vocab-header">
+          <h4>我的生词本 ({{ vocabList.length }})</h4>
+          <div class="vocab-actions">
+            <button @click="clearVocab" class="btn-text danger">🗑️ 清空</button>
+            <button @click="exportVocab" class="btn-text">📥 导出</button>
+          </div>
+        </div>
+        <div class="vocab-list-container">
+          <div v-for="(word, index) in vocabList" :key="index" class="vocab-list-item">
+            <span class="vocab-list-item-text">{{ word }}</span>
+            <button class="btn-text danger" title="删除" @click="removeVocab(index)">&times;</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    
+    <div class="view-tabs">
+        <button class="view-tab" :class="{active: currentView === 'article'}" @click="currentView = 'article'">📖 文章与阅读理解</button>
+        <button class="view-tab" :class="{active: currentView === 'cloze'}" @click="currentView = 'cloze'">🕳️ 完形填空</button>
+        <button class="view-tab" :class="{active: currentView === 'vocab'}" @click="currentView = 'vocab'">📝 背单词区</button>
+    </div>
+
+    <!-- 1. 📖 文章区域 -->
+    <div v-if="currentView === 'article'" style="width: 100%; display: flex; flex-direction: column; align-items: center;">
+        <div v-if="articleResult" class="article-card">
+          <div class="article-body" v-html="formattedArticle" @mouseup="handleSelection"></div>
+        </div>
+        <div v-else style="color: #6b7280; margin-top: 100px;">在左侧生成文章后，将在此处显示。</div>
+
+        <!-- 题干划词翻译 -->
+        <div v-if="quizQuestions.length > 0" class="quiz-card" @mouseup="handleSelection">
+            <h3 style="margin-top: 0; color: #818cf8;">阅读理解 (Leseverstehen)</h3>
+            <div v-for="(q, i) in quizQuestions" :key="i" class="quiz-item">
+                <p><strong>{{ i+1 }}. {{ q.question }}</strong></p>
+                <div class="quiz-options">
+                    <label v-for="(opt, j) in q.options" :key="j">
+                        <input type="radio" :name="'q'+i" :value="opt" v-model="q.userAnswer" :disabled="q.showResult" />
+                        {{ opt }}
+                    </label>
+                </div>
+                <div v-if="q.showResult" class="result-box" :style="{ backgroundColor: q.userAnswer === q.answer ? '#064e3b' : '#7f1d1d' }">
+                    <p v-if="q.userAnswer === q.answer" style="color: #a7f3d0; font-weight: bold;">✅ 回答正确</p>
+                    <p v-else style="color: #fecaca; font-weight: bold;">❌ 回答错误。正确答案：{{ q.answer }}</p>
+                    <p style="font-size: 14px; margin-top: 8px; color: #d1d5db;"><strong>解析：</strong>{{ q.explanation }}</p>
+                </div>
+            </div>
+            <button @click="submitQuiz" class="btn-primary" v-if="!quizQuestions[0].showResult">提交答案并查看解析</button>
+            <button @click="quizQuestions = []" class="btn-secondary" v-else>清除题目</button>
+        </div>
+    </div>
+
+    <!-- 2. 🕳️ 完形填空区域 -->
+    <div v-if="currentView === 'cloze'" style="width: 100%; display: flex; flex-direction: column; align-items: center;">
+        <div class="vocab-practice-card cloze-container">
+            <h2 style="margin-top: 0; color: #818cf8;">🕳️ 完形填空特训 (Lückentext)</h2>
+            <p v-if="isGeneratingCloze" style="color: #818cf8;">AI 正在智能挖空中，请稍候...</p>
+            <p v-else-if="clozeParts.length === 0" style="color: #6b7280;">请在左侧点击“抽取原文生成完形填空”。</p>
+            
+            <div v-else>
+                <p style="color: #9ca3af; font-size: 14px; margin-bottom: 24px; line-height: 1.5;">根据上下文和右侧的中文释义，填入正确的德文。系统将实时校验您的拼写与词尾变化。</p>
+                
+                <template v-for="(part, index) in clozeParts" :key="index">
+                    <span v-if="part.type === 'text'" v-html="part.content"></span>
+                    <span v-else-if="part.type === 'blank'" class="cloze-input-wrapper">
+                        <input 
+                           type="text"
+                           v-model="clozeData.blanks[part.index].userInput" 
+                           @input="checkCloze(part.index)" 
+                           class="cloze-input" 
+                           :class="clozeData.blanks[part.index].status" 
+                           autocomplete="off" 
+                           spellcheck="false" 
+                        />
+                        <span class="cloze-hint">({{ clozeData.blanks[part.index].zh }})</span>
+                    </span>
+                </template>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. 📝 背单词区域 -->
+    <div v-if="currentView === 'vocab'" style="width: 100%; display: flex; flex-direction: column; align-items: center;">
+        <div class="vocab-practice-card">
+            <h2 style="margin-top: 0; color: #818cf8;">🧠 德语单词听写</h2>
+            <p v-if="isGeneratingVocabTest" style="color: #818cf8;">正在请求 AI 翻译生词本并生成试卷，请稍候...</p>
+            <p v-else-if="vocabPracticeList.length === 0" style="color: #6b7280;">请在左侧输入你想复习的单词后点击“开启背单词测试”。</p>
+            
+            <div v-else>
+                <p style="color: #9ca3af; font-size: 14px; margin-bottom: 24px;">根据左侧的中文释义，在右侧框中输入德语单词。系统会自动校验拼写。</p>
+                <div v-for="(item, index) in vocabPracticeList" :key="index" class="vocab-row">
+                    <div class="vocab-zh">{{ item.zh }}</div>
+                    <input 
+                       v-model="item.userInput" 
+                       @input="checkVocab(item)" 
+                       class="vocab-de-input" 
+                       :class="item.status" 
+                       placeholder="输入德文..." 
+                       autocomplete="off" 
+                       spellcheck="false" 
+                    />
+                    <div class="status-icon">
+                        <span v-if="item.status === 'correct'">✅</span>
+                        <span v-if="item.status === 'incorrect' && item.userInput.length > 0">❌</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+  </main>
+
+  <!-- 悬浮划词翻译 -->
+  <div v-if="tooltip.visible" class="translation-tooltip" :style="{ left: tooltip.x + 'px', top: tooltip.isAbove ? 'auto' : tooltip.y + 'px', bottom: tooltip.isAbove ? tooltip.y + 'px' : 'auto' }">
+    <div class="tooltip-header">
+      <span class="tooltip-title">💡 划词翻译</span>
+      <button class="tooltip-close" @click="closeTooltip">&times;</button>
+    </div>
+    <div class="tooltip-content">
+      <div v-if="tooltip.isLoading && !tooltip.translation" style="color: #818cf8;">AI 正在飞速翻译...</div>
+      <div v-else class="tooltip-text" v-html="formattedTooltip"></div>
+    </div>
+    <div class="tooltip-footer" v-if="!tooltip.isLoading && tooltip.translation && isSingleWord(tooltip.text)">
+      <button @click="addTooltipWordToVocab" class="btn-primary" style="padding: 4px 12px; font-size: 12px; width: 100%; border-radius: 0 0 8px 8px;">加入生词本 (自动提取原形)</button>
+    </div>
+  </div>
+
+  <!-- AI 答疑悬浮窗 -->
+  <div class="floating-container">
+    <div v-if="isChatOpen" class="chat-panel">
+      <div class="chat-header">
+        <span>德语 AI 助手</span>
+        <button @click="isChatOpen = false" style="background:none;border:none;color:white;font-size:20px;cursor:pointer;">&times;</button>
+      </div>
+      <div class="chat-messages" ref="chatScrollRef">
+        <div v-for="(msg, index) in chatHistory" :key="index" :class="['chat-message', msg.role]">
+          <div class="message-content">{{ msg.content }}</div>
+        </div>
+      </div>
+      <div class="chat-footer">
+        <input v-model="chatInput" @keyup.enter="sendChatMessage" type="text" placeholder="问问 AI..." :disabled="isChatLoading"/>
+        <button @click="sendChatMessage" :disabled="isChatLoading" class="btn-primary" style="padding:8px 16px;">发送</button>
+      </div>
+    </div>
+    <button @click="isChatOpen = !isChatOpen" class="floating-ball" title="随时向 AI 提问">
+      <span v-if="!isChatOpen">💬</span><span v-else>&times;</span>
+    </button>
+  </div>
+</div>
+
+<script>
+  const { createApp, ref, reactive, computed, onMounted, watch, nextTick } = Vue;
+
+  createApp({
+    setup() {
+      const currentView = ref('article'); 
+
+      const config = reactive({ baseUrl: 'https://api.deepseek.com/v1', apiKey: '' });
+      const settings = reactive({ level: 'B1', words: '', topic: '', wordCount: 300, questionCount: 3 });
+      
+      const articleResult = ref('');
+      const isGeneratingArticle = ref(false);
+
+      const quizQuestions = ref([]);
+      const isGeneratingQuestions = ref(false);
+
+      const vocabList = ref([]);
+      const dictInput = ref('');
+      const dictResult = ref('');
+      const isDictLoading = ref(false);
+      const currentLookupWord = ref(''); 
+
+      const vocabPracticeList = ref([]);
+      const isGeneratingVocabTest = ref(false);
+
+      const clozeData = ref({ text: '', blanks: [] });
+      const clozeParts = ref([]);
+      const isGeneratingCloze = ref(false);
+
+      const tooltip = reactive({ visible: false, x: 0, y: 0, isAbove: false, text: '', translation: '', isLoading: false });
+      let translateAbortController = null;
+
+      const isChatOpen = ref(false);
+      const chatInput = ref('');
+      const isChatLoading = ref(false);
+      const chatScrollRef = ref(null);
+      const chatHistory = ref([{ role: 'assistant', content: 'Hallo! 阅读中遇到任何问题都可以问我。' }]);
+
+      onMounted(() => {
+        const savedConfig = localStorage.getItem('de_reader_config_html');
+        if (savedConfig) Object.assign(config, JSON.parse(savedConfig));
+        
+        const savedSettings = localStorage.getItem('de_reader_settings');
+        if(savedSettings) {
+             const parsed = JSON.parse(savedSettings);
+             settings.level = parsed.level || 'B1';
+             settings.wordCount = parsed.wordCount || 300;
+             settings.topic = parsed.topic || '';
+        }
+        const savedVocab = localStorage.getItem('de_reader_vocab');
+        if (savedVocab) vocabList.value = JSON.parse(savedVocab);
+
+        document.addEventListener('mousedown', (e) => {
+          const tooltipEl = document.querySelector('.translation-tooltip');
+          if (tooltipEl && tooltipEl.contains(e.target)) return; 
+          setTimeout(() => { if (!window.getSelection().toString().trim()) closeTooltip(); }, 10);
+        });
+      });
+
+      watch(config, (newVal) => { localStorage.setItem('de_reader_config_html', JSON.stringify(newVal)); }, { deep: true });
+      watch(() => [settings.level, settings.wordCount, settings.topic], ([level, count, topic]) => { 
+          localStorage.setItem('de_reader_settings', JSON.stringify({level, wordCount: count, topic})); 
+      });
+      watch(vocabList, (newVal) => { localStorage.setItem('de_reader_vocab', JSON.stringify(newVal)); }, { deep: true });
+
+      const formattedArticle = computed(() => {
+        if (!articleResult.value) return '';
+        let html = articleResult.value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\n/g, '<br>');
+        html = html.replace(/\*\*\s*(.*?)\s*\|\s*(.*?)\s*\*\*/g, '<strong style="color: #818cf8;">$1</strong>');
+        html = html.replace(/\*\*(.*?)\*\*/g, '<strong style="color: #818cf8;">$1</strong>');
+        return html;
+      });
+
+      const formattedTooltip = computed(() => {
+        if (!tooltip.translation) return '';
+        let html = tooltip.translation;
+        html = html.replace(/\[BASE:.*?\]\s*/gi, '');
+        html = html.replace(/(标签|标记|格式|原形|注意)\s*--[>\&gt;]?\s*/gi, '');
+        html = html.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\n/g, '<br>');
+        html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+        return html;
+      });
+
+      const formattedDictResult = computed(() => {
+        if (!dictResult.value) return '';
+        let html = dictResult.value;
+        html = html.replace(/\[BASE:.*?\]\s*/gi, '');
+        html = html.replace(/(标签|标记|格式|原形|注意)\s*--[>\&gt;]?\s*/gi, '');
+        return html;
+      });
+
+      function extractBaseWord(text, fallbackText) {
+          const match = text.match(/\[BASE:\s*(.*?)\s*\]/i);
+          if (match && match[1]) {
+             return match[1].replace(/\*/g, '').trim();
+          }
+          return fallbackText.replace(/[^a-zA-ZäöüßÄÖÜ\s-]/g, '').trim();
+      }
+
+      async function fetchAIStream(messages, onChunk, onDone, signal = null) {
+        if (!config.apiKey) { alert('请先配置 API Key'); return; }
+        try {
+          const response = await fetch(`${config.baseUrl}/chat/completions`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${config.apiKey}` },
+            body: JSON.stringify({ model: 'deepseek-chat', messages, stream: true }),
+            signal
+          });
+          if (!response.ok) throw new Error(`HTTP 错误: ${response.status}`);
+          const reader = response.body.getReader();
+          const decoder = new TextDecoder('utf-8');
+          let buffer = '';
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            buffer += decoder.decode(value, { stream: true });
+            const lines = buffer.split('\n');
+            buffer = lines.pop();
+            for (const line of lines) {
+              const cleanLine = line.trim();
+              if (!cleanLine || cleanLine === 'data: [DONE]') continue;
+              if (cleanLine.startsWith('data: ')) {
+                try {
+                  const content = JSON.parse(cleanLine.slice(6)).choices[0]?.delta?.content || '';
+                  if (content) onChunk(content);
+                } catch (e) {}
+              }
+            }
+          }
+          if (onDone) onDone();
+        } catch (error) {
+          if (error.name === 'AbortError') return;
+          alert(`请求出错: ${error.message}`);
+          if (onDone) onDone();
+        }
+      }
+
+      async function fetchAIJson(messages, loadingRef) {
+        if (!config.apiKey) { alert('请先配置 API Key'); return null; }
+        loadingRef.value = true;
+        try {
+          const response = await fetch(`${config.baseUrl}/chat/completions`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${config.apiKey}` },
+            body: JSON.stringify({ model: 'deepseek-chat', messages, stream: false })
+          });
+          if (!response.ok) throw new Error(`HTTP 错误: ${response.status}`);
+          const data = await response.json();
+          const content = data.choices[0].message.content;
+          let cleaned = content.replace(/```json/gi, '').replace(/```/g, '').trim();
+          return JSON.parse(cleaned);
+        } catch (error) {
+          alert(`AI 格式返回错误或网络异常: ${error.message}\n请重新点击生成。`);
+          return null;
+        } finally {
+          loadingRef.value = false;
+        }
+      }
+
+      // ================= 阅读生成区 =================
+      function generateArticleWithWords() {
+        const wordList = settings.words.split('\n').map(w => w.trim()).filter(w => w);
+        if (wordList.length === 0) return alert('请至少输入一个单词。');
+        articleResult.value = ''; quizQuestions.value = []; clozeParts.value = []; isGeneratingArticle.value = true; currentView.value = 'article';
+        const systemPrompt = `你是一位德语教师。请根据单词列表生成德语阅读文章。要求：1. 难度 ${settings.level} 等级，字数约 ${settings.wordCount} 词。2. 必须包含文中单词并严格使用格式 \`**德文单词**\` 高亮。`;
+        fetchAIStream(
+          [{ role: 'system', content: systemPrompt }, { role: 'user', content: `开始生成，必须包含：\n${wordList.join('\n')}` }],
+          (chunk) => { articleResult.value += chunk; },
+          () => { isGeneratingArticle.value = false; }
+        );
+      }
+
+      function generateArticleWithTopic() {
+        const topic = settings.topic.trim();
+        if (!topic) return alert('请先在输入框输入你想阅读的文章主题。');
+        articleResult.value = ''; quizQuestions.value = []; clozeParts.value = []; isGeneratingArticle.value = true; currentView.value = 'article';
+        
+        const systemPrompt = `你是一位德语教师。请根据用户提供的提示词或主题生成一篇德语文章。要求：1. 难度 ${settings.level} 等级，字数约 ${settings.wordCount} 词。2. 把重要的 5-8 个词汇用 \`**德文单词**\` 格式高亮。`;
+        fetchAIStream(
+          [{ role: 'system', content: systemPrompt }, { role: 'user', content: `请以这个主题或提示词生成文章：${topic}` }],
+          (chunk) => { articleResult.value += chunk; },
+          () => { isGeneratingArticle.value = false; }
+        );
+      }
+
+      // ================= 阅读理解出题 =================
+      async function generateQuestions() {
+        if (!articleResult.value) return;
+        currentView.value = 'article';
+        const prompt = `你是一个专业的德语老师。请根据以下德语文章出 ${settings.questionCount} 道阅读理解题。题型为单项选择题（4个选项）或判断题（Richtig/Falsch），完全模拟歌德考试或TestDaF格式。
+请严格返回 JSON 数组格式，绝不能包含 Markdown 标记、\`\`\`json 符号或任何额外文字！
+JSON 结构必须是：
+[
+  {
+    "question": "德语题目内容",
+    "options": ["选项A的文本", "选项B的文本", "选项C的文本", "选项D的文本"],
+    "answer": "正确选项的完整文本",
+    "explanation": "中文解析：为什么选这个答案"
+  }
+]
+文章内容如下：\n${articleResult.value}`;
+
+        const result = await fetchAIJson([{ role: 'system', content: prompt }], isGeneratingQuestions);
+        if (result && Array.isArray(result)) {
+            quizQuestions.value = result.map(q => ({
+                ...q,
+                userAnswer: '',
+                showResult: false
+            }));
+            setTimeout(() => { document.querySelector('.main-content').scrollTo({ top: document.querySelector('.main-content').scrollHeight, behavior: 'smooth' }); }, 300);
+        }
+      }
+
+      function submitQuiz() {
+        quizQuestions.value.forEach(q => q.showResult = true);
+      }
+
+      // ================= 完形填空 (Lückentext) =================
+      async function generateCloze() {
+          if (!articleResult.value) return;
+          currentView.value = 'cloze';
+          clozeParts.value = [];
+          
+          const prompt = `你是一个德语老师。请根据以下德语文章生成一段完形填空。
+请从中挑选 6 到 10 个重要的词汇（动词、名词、形容词等）挖空。
+要求：
+1. 严格返回 JSON 格式，不要有任何 Markdown 标记或代码块符号（如 \`\`\`json ）。
+2. JSON 格式必须是：
+{
+  "text": "这是带有占位符的德语文章片段。占位符请严格用 {{0}}, {{1}}, {{2}} 表示。请保留原文的换行。",
+  "blanks": [
+     { "answer": "被挖空的德文原词", "zh": "该词在这里的中文释义" }
+  ]
+}
+
+文章内容：\n${articleResult.value}`;
+
+          const result = await fetchAIJson([{ role: 'system', content: prompt }], isGeneratingCloze);
+          if (result && result.text && Array.isArray(result.blanks)) {
+              result.blanks.forEach(b => { b.userInput = ''; b.status = null; });
+              clozeData.value = result;
+              
+              const parts = [];
+              const regex = /\{\{\s*(\d+)\s*\}\}/g;
+              let lastIndex = 0;
+              let match;
+              while ((match = regex.exec(result.text)) !== null) {
+                  if (match.index > lastIndex) {
+                      let textContent = result.text.substring(lastIndex, match.index).replace(/\n/g, '<br>');
+                      textContent = textContent.replace(/\*\*(.*?)\*\*/g, '<strong style="color:#818cf8;">$1</strong>');
+                      parts.push({ type: 'text', content: textContent });
+                  }
+                  parts.push({ type: 'blank', index: parseInt(match[1]) });
+                  lastIndex = regex.lastIndex;
+              }
+              if (lastIndex < result.text.length) {
+                  let textContent = result.text.substring(lastIndex).replace(/\n/g, '<br>');
+                  textContent = textContent.replace(/\*\*(.*?)\*\*/g, '<strong style="color:#818cf8;">$1</strong>');
+                  parts.push({ type: 'text', content: textContent });
+              }
+              clozeParts.value = parts;
+          }
+      }
+
+      function checkCloze(index) {
+          const blank = clozeData.value.blanks[index];
+          if (!blank.userInput.trim()) {
+              blank.status = null;
+              return;
+          }
+          if (blank.userInput.trim().toLowerCase() === blank.answer.trim().toLowerCase()) {
+              blank.status = 'correct';
+          } else {
+              blank.status = 'incorrect';
+          }
+      }
+
+      // ================= 背单词 =================
+      async function startVocabPractice() {
+        const inputWords = settings.words.split('\n').map(w => w.trim()).filter(w => w);
+        if (inputWords.length === 0) return alert('请先在上方输入框中填入你想复习的德文单词。');
+        
+        currentView.value = 'vocab';
+        vocabPracticeList.value = [];
+        
+        const prompt = `请将以下德语单词翻译成中文。
+要求：严格返回 JSON 数组格式，绝不能包含 Markdown 标记、\`\`\`json 符号或任何额外文字！必须严格按照给出单词的顺序返回，不可打乱。
+JSON 结构必须是：
+[
+  { "de": "德语原词", "zh": "中文释义" }
+]
+单词列表如下：\n${inputWords.join('\n')}`;
+
+        const result = await fetchAIJson([{ role: 'system', content: prompt }], isGeneratingVocabTest);
+        if (result && Array.isArray(result)) {
+            vocabPracticeList.value = result.map(item => ({
+                de: item.de,
+                zh: item.zh,
+                userInput: '',
+                status: null
+            }));
+        }
+      }
+
+      function checkVocab(item) {
+        if (!item.userInput.trim()) {
+            item.status = null;
+            return;
+        }
+        if (item.userInput.trim().toLowerCase() === item.de.trim().toLowerCase()) {
+            item.status = 'correct';
+        } else {
+            item.status = 'incorrect';
+        }
+      }
+
+      // ================= 字典与其他 =================
+      function lookupWord() {
+        const word = dictInput.value.trim();
+        if (!word) return;
+        dictResult.value = ''; isDictLoading.value = true; currentLookupWord.value = word; 
+        
+        const systemPrompt = `你是一个专业的德语词典。请查询用户输入的单词："${word}"。
+要求：
+1. 必须在返回的最开头指定单词的纯原形（不含任何冠词），严格使用格式：[BASE:单词原形] （例如 [BASE:Entscheidung] 或 [BASE:entscheiden]）。警告：绝对不要输出“标签”或任何前缀废话！
+2. 直接输出以下 HTML 结构：
+<div class="dict-item"><strong>原形：</strong>[原形与词性，名词按性别标色：<span style="color:#60a5fa;">der 名词</span> / <span style="color:#f87171;">die 名词</span> / <span style="color:#4ade80;">das 名词</span>，并明确标出复数形式；动词明确写出过去式、过去分词等特殊变位]</div>
+<div class="dict-item"><strong>解释：</strong>[中文释义]</div>
+<div class="dict-item"><strong>例句：</strong>[德文例句及中文翻译]</div>`;
+        fetchAIStream([{ role: 'system', content: systemPrompt }], (chunk) => { dictResult.value += chunk; }, () => { isDictLoading.value = false; });
+      }
+
+      function addDictWordToVocab() {
+        const word = extractBaseWord(dictResult.value, currentLookupWord.value);
+        if (word && !vocabList.value.includes(word)) vocabList.value.push(word);
+        dictResult.value = ''; dictInput.value = '';
+      }
+      function addTooltipWordToVocab() {
+        const word = extractBaseWord(tooltip.translation, tooltip.text);
+        if (word && !vocabList.value.includes(word)) vocabList.value.push(word);
+        closeTooltip();
+      }
+
+      function removeVocab(index) { vocabList.value.splice(index, 1); }
+      function clearVocab() { if (confirm("确定要清空所有生词吗？此操作不可恢复。")) vocabList.value = []; }
+      function exportVocab() {
+        if (vocabList.value.length === 0) return;
+        const textContent = vocabList.value.join('\n');
+        const blob = new Blob([textContent], { type: 'text/plain;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a'); a.href = url; a.download = '德语生词本.txt';
+        document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
+      }
+      function isSingleWord(text) { return !text.trim().includes(' '); }
+
+      // ================= 悬浮划词翻译 =================
+      function handleSelection() {
+        setTimeout(() => {
+          const selection = window.getSelection();
+          const text = selection.toString().trim();
+          if (!text) return;
+          
+          const range = selection.getRangeAt(0);
+          const rect = range.getBoundingClientRect();
+          
+          tooltip.visible = true; 
+          tooltip.isLoading = true; 
+          tooltip.translation = ''; 
+          tooltip.text = text;
+          
+          let targetX = rect.left + rect.width / 2;
+          targetX = Math.max(200, Math.min(targetX, window.innerWidth - 200));
+          tooltip.x = targetX;
+
+          const spaceBelow = window.innerHeight - rect.bottom;
+          const spaceAbove = rect.top;
+          
+          if (spaceBelow < 380 && spaceAbove > spaceBelow) {
+              tooltip.isAbove = true;
+              tooltip.y = window.innerHeight - rect.top + 10;
+          } else {
+              tooltip.isAbove = false;
+              tooltip.y = rect.bottom + 10;
+          }
+
+          if (translateAbortController) translateAbortController.abort();
+          translateAbortController = new AbortController();
+
+          // 核心更新：长句/词组拆解翻译 Prompt
+          const sysPrompt = `你是专业的德语老师。翻译用户选中的德文。
+
+如果只有一个单词：
+1. 必须在回复的最开头输出该词的纯原形（不含冠词，用于系统录入生词本），严格使用格式：[BASE:单词原形] （例如 [BASE:entscheiden] 或 [BASE:Mädchen]）。警告：绝对不要在前面加任何废话！
+2. 提供该单词的原形、词性和释义。如果是名词，必须标明冠词 (der/die/das) 和复数形式；如果是动词，必须指出特殊变位。
+3. 造一个简短的德语例句，并提供中文翻译。
+
+如果是多个单词（词组或句子）：
+请按以下三个部分清晰排版：
+【整体翻译】给出准确的中文意思。
+【结构分析】分析句子语法结构和成分（如主谓宾、从句、框形结构等）。
+【逐词解析】拆解并分别列出每个单词的德语原形、词性及中文意思。
+
+排版要清晰易读，重点词汇可以使用 **加粗**。`;
+
+          fetchAIStream(
+            [{ role: 'system', content: sysPrompt }, { role: 'user', content: text }],
+            (chunk) => { tooltip.translation += chunk; },
+            () => { tooltip.isLoading = false; },
+            translateAbortController.signal
+          );
+        }, 50);
+      }
+
+      function closeTooltip() {
+        tooltip.visible = false;
+        if (translateAbortController) { translateAbortController.abort(); translateAbortController = null; }
+      }
+
+      // ================= AI 答疑球 =================
+      function sendChatMessage() {
+        if (!chatInput.value.trim() || isChatLoading.value) return;
+        chatHistory.value.push({ role: 'user', content: chatInput.value });
+        chatInput.value = ''; isChatLoading.value = true;
+        chatHistory.value.push({ role: 'assistant', content: '' });
+        const assistantMsgIndex = chatHistory.value.length - 1;
+        scrollToBottom();
+
+        fetchAIStream(
+          [{ role: 'system', content: `你是德语专家。解答用户基于这篇文章的问题：\n\n${articleResult.value}` }, ...chatHistory.value.slice(0, -1)],
+          (chunk) => { chatHistory.value[assistantMsgIndex].content += chunk; scrollToBottom(); },
+          () => { isChatLoading.value = false; }
+        );
+      }
+      function scrollToBottom() {
+        nextTick(() => { if (chatScrollRef.value) chatScrollRef.value.scrollTop = chatScrollRef.value.scrollHeight; });
+      }
+
+      return {
+        currentView,
+        config, settings, articleResult, isGeneratingArticle,
+        quizQuestions, isGeneratingQuestions, generateQuestions, submitQuiz,
+        clozeData, clozeParts, isGeneratingCloze, generateCloze, checkCloze,
+        dictInput, dictResult, isDictLoading, vocabList, lookupWord, addDictWordToVocab, removeVocab, clearVocab, exportVocab, addTooltipWordToVocab, isSingleWord,
+        vocabPracticeList, isGeneratingVocabTest, startVocabPractice, checkVocab,
+        tooltip, handleSelection, closeTooltip, formattedTooltip, formattedDictResult,
+        isChatOpen, chatInput, isChatLoading, chatScrollRef, chatHistory,
+        formattedArticle, generateArticleWithWords, generateArticleWithTopic, sendChatMessage
+      };
+    }
+  }).mount('#app');
+</script>
+</body>
+</html>
