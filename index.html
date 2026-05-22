@@ -407,7 +407,11 @@
             <div v-else>
                 <p style="color: #7dd3fc; font-size: 14px; margin-bottom: 24px;">根据中文释义，输入德文单词。拼写正确将自动变绿。</p>
                 <div v-for="(item, index) in vocabPracticeList" :key="index" class="vocab-row">
-                    <div class="vocab-zh">{{ item.zh }}</div>
+                    <!-- 巧妙的布局调整：保证不破环原有CSS的前提下，优雅地内嵌查看答案按钮 -->
+                    <div class="vocab-zh" style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
+                        <span style="margin-right: 8px;">{{ item.zh }}</span>
+                        <button @click="showVocabAnswer(item)" class="btn-secondary" style="padding: 4px 10px; font-size: 12px; white-space: nowrap; height: 28px; line-height: 1;">查看答案</button>
+                    </div>
                     <input 
                        v-model="item.userInput" 
                        @input="checkVocab(item)" 
@@ -449,7 +453,8 @@
       </div>
       <div class="chat-messages" ref="chatScrollRef">
         <div v-for="(msg, index) in chatHistory" :key="index" :class="['chat-message', msg.role]">
-          <div class="message-content">{{ msg.content }}</div>
+          <!-- 修改点：使用 v-html 进行 Markdown 格式渲染 -->
+          <div class="message-content" v-html="formatChatMessage(msg.content)"></div>
         </div>
       </div>
       <div class="chat-footer">
@@ -495,6 +500,7 @@
 
       const tooltip = reactive({ visible: false, x: 0, y: 0, isAbove: false, text: '', translation: '', isLoading: false });
       let translateAbortController = null;
+      let selectionTimeout = null; // 用于修复移动端选词灵敏度的防抖定时器
 
       const isChatOpen = ref(false);
       const chatInput = ref('');
@@ -521,6 +527,24 @@
           if (tooltipEl && tooltipEl.contains(e.target)) return; 
           setTimeout(() => { if (!window.getSelection().toString().trim()) closeTooltip(); }, 10);
         });
+
+        // 核心修复1：增加全局 selectionchange 监听以提升移动端划词灵敏度
+        document.addEventListener('selectionchange', () => {
+          clearTimeout(selectionTimeout);
+          selectionTimeout = setTimeout(() => {
+            const selection = window.getSelection();
+            if (selection && selection.toString().trim()) {
+              const node = selection.anchorNode;
+              if (node && node.nodeType) {
+                const el = node.nodeType === 3 ? node.parentNode : node;
+                // 确保只在文章或题目区域触发
+                if (el && el.closest && (el.closest('.article-card') || el.closest('.quiz-card'))) {
+                  handleSelection();
+                }
+              }
+            }
+          }, 300); // 300ms防抖保证划词过程顺滑触发
+        });
       });
 
       watch(config, (newVal) => { localStorage.setItem('de_reader_config_html', JSON.stringify(newVal)); }, { deep: true });
@@ -537,26 +561,26 @@
         return html;
       });
 
-      // 核心改动：支持安全的划词染色处理
       function applyGenderColors(text) {
           if (!text) return '';
           let html = text;
-          // 第一步：预留定制XML标签，避免被转移符替换
           html = html.replace(/<M>(.*?)<\/M>/gi, '###M###$1###END###');
           html = html.replace(/<F>(.*?)<\/F>/gi, '###F###$1###END###');
           html = html.replace(/<N>(.*?)<\/N>/gi, '###N###$1###END###');
-          
-          // 第二步：安全的文本转义
           html = html.replace(/\[BASE:.*?\]\s*/gi, '');
           html = html.replace(/(标签|标记|格式|原形|注意)\s*--[>\&gt;]?\s*/gi, '');
           html = html.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\n/g, '<br>');
-          
-          // 第三步：将占位符转换为带有颜色的样式 (阳性蓝、阴性红、中性绿)
           html = html.replace(/###M###(.*?)###END###/g, '<span style="color:#60a5fa; font-weight:bold;">$1</span>');
           html = html.replace(/###F###(.*?)###END###/g, '<span style="color:#f87171; font-weight:bold;">$1</span>');
           html = html.replace(/###N###(.*?)###END###/g, '<span style="color:#4ade80; font-weight:bold;">$1</span>');
-          
-          // 第四步：解析 Markdown 粗体
+          html = html.replace(/\*\*(.*?)\*\*/g, '<strong style="color: #00d8ff; text-shadow: 0 0 4px rgba(0,216,255,0.4);">$1</strong>');
+          return html;
+      }
+
+      // 新增点：处理 AI 助教悬浮窗的 Markdown 格式渲染
+      function formatChatMessage(text) {
+          if (!text) return '';
+          let html = text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\n/g, '<br>');
           html = html.replace(/\*\*(.*?)\*\*/g, '<strong style="color: #00d8ff; text-shadow: 0 0 4px rgba(0,216,255,0.4);">$1</strong>');
           return html;
       }
@@ -701,15 +725,17 @@ JSON 结构必须是：
           currentView.value = 'cloze'; isSidebarOpen.value = false;
           clozeParts.value = [];
           
+          // 核心修复2：重写 Prompt，下死命令要求 AI 只能挖带有 `**` 符号的高亮单词
           const prompt = `你是一个德语老师。请根据以下德语文章生成一段完形填空。
-请从中挑选 6 到 10 个重要的词汇（动词、名词、形容词等）挖空。
+【核心要求】：请**且仅请**将文章中已经被 \`**\` 符号包裹的高亮单词（例如 **德文单词**）作为挖空对象。坚决不要自己随意挑选或额外增加其他单词挖空！有多少个 \`**\` 高亮单词，就挖多少个空。
+
 要求：
 1. 严格返回 JSON 格式，不要有任何 Markdown 标记或代码块符号（如 \`\`\`json ）。
 2. JSON 格式必须是：
 {
-  "text": "这是带有占位符的德语文章片段。占位符请严格用 {{0}}, {{1}}, {{2}} 表示。请保留原文的换行。",
+  "text": "这是带有占位符的德语文章片段。占位符请严格用 {{0}}, {{1}}, {{2}} 表示。请保留原文的换行。注意：原文章中被挖空的 **单词** 会被替换为对应的占位符，不要保留 ** 符号。",
   "blanks": [
-     { "answer": "被挖空的德文原词", "zh": "该词在这里的中文释义" }
+     { "answer": "被挖空的德文原词（即原本被 ** 包裹的高亮单词）", "zh": "该词在这里的中文释义" }
   ]
 }
 
@@ -794,6 +820,12 @@ JSON 结构必须是：
         }
       }
 
+      // 核心修复3：新增显示背单词答案逻辑
+      function showVocabAnswer(item) {
+        item.userInput = item.de;
+        checkVocab(item);
+      }
+
       // ================= 字典与其他 =================
       function lookupWord() {
         const word = dictInput.value.trim();
@@ -841,10 +873,14 @@ JSON 结构必须是：
       function handleSelection(e) {
         if (e && e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
         
+        // 修正逻辑：稍微增加超时时间配合移动端的 selectionchange
         setTimeout(() => {
           const selection = window.getSelection();
           const text = selection.toString().trim();
           if (!text) return;
+
+          // 若已经处于显示状态且内容一致，则不要重复触发造成闪烁
+          if (tooltip.visible && tooltip.text === text) return;
           
           const range = selection.getRangeAt(0);
           const rect = range.getBoundingClientRect();
@@ -898,7 +934,7 @@ JSON 结构必须是：
             () => { tooltip.isLoading = false; },
             translateAbortController.signal
           );
-        }, 50);
+        }, 200); 
       }
 
       function closeTooltip() {
@@ -932,9 +968,9 @@ JSON 结构必须是：
         quizQuestions, isGeneratingQuestions, generateQuestions, submitQuiz,
         clozeData, clozeParts, isGeneratingCloze, generateCloze, checkCloze,
         dictInput, dictResult, isDictLoading, vocabList, lookupWord, addDictWordToVocab, removeVocab, clearVocab, exportVocab, addTooltipWordToVocab, isSingleWord,
-        vocabPracticeList, isGeneratingVocabTest, startVocabPractice, checkVocab,
+        vocabPracticeList, isGeneratingVocabTest, startVocabPractice, checkVocab, showVocabAnswer,
         tooltip, handleSelection, closeTooltip, formattedTooltip, formattedDictResult,
-        isChatOpen, chatInput, isChatLoading, chatScrollRef, chatHistory,
+        isChatOpen, chatInput, isChatLoading, chatScrollRef, chatHistory, formatChatMessage,
         formattedArticle, generateArticleWithWords, generateArticleWithTopic, sendChatMessage
       };
     }
