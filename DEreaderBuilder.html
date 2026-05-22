@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>德语阅读生成器与AI助教</title>
   <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
   <style>
@@ -12,8 +12,14 @@
     
     .app-container {
       display: flex; flex-direction: row; flex-wrap: nowrap; 
-      width: 100vw; height: 100vh; overflow: hidden;
+      width: 100vw; height: 100vh; overflow: hidden; position: relative;
     }
+
+    /* ========== 移动端头部与遮罩 (新增) ========== */
+    .mobile-header { display: none; background-color: #1e1e1e; padding: 12px 20px; align-items: center; justify-content: space-between; border-bottom: 1px solid #333; width: 100%; flex-shrink: 0; z-index: 90; }
+    .menu-btn { background: none; border: none; color: #e5e7eb; font-size: 24px; cursor: pointer; padding: 0; line-height: 1; }
+    .sidebar-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); z-index: 100; backdrop-filter: blur(2px); opacity: 0; transition: opacity 0.3s; pointer-events: none; }
+    .sidebar-overlay.show { display: block; opacity: 1; pointer-events: auto; }
 
     /* ========== 左侧边栏 ========== */
     .sidebar {
@@ -21,9 +27,13 @@
       background-color: #1e1e1e; border-right: 1px solid #333;
       padding: 24px; display: flex; flex-direction: column; gap: 20px;
       box-shadow: 2px 0 8px rgba(0,0,0,0.5); height: 100%; overflow-y: auto;
+      z-index: 101; transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
     
-    .sidebar h2 { margin: 0; font-size: 22px; color: #818cf8; }
+    .sidebar-header { display: flex; justify-content: space-between; align-items: center; }
+    .sidebar-header h2 { margin: 0; font-size: 22px; color: #818cf8; }
+    .mobile-close-btn { display: none; background: none; border: none; color: #9ca3af; font-size: 28px; cursor: pointer; padding: 0; line-height: 1; }
+    
     .config-section, .input-section, .vocab-section { display: flex; flex-direction: column; gap: 10px; }
     .sidebar h3 { margin: 0; font-size: 15px; color: #9ca3af; border-bottom: 1px solid #333; padding-bottom: 6px; }
     
@@ -52,7 +62,7 @@
     .vocab-list-container { display: flex; flex-direction: column; gap: 8px; max-height: 250px; overflow-y: auto; padding: 4px 0; }
     .vocab-list-item { display: flex; justify-content: space-between; align-items: center; background: #2c2c2c; border: 1px solid #444; padding: 8px 12px; border-radius: 6px; font-size: 14px; transition: 0.2s; }
     .vocab-list-item:hover { border-color: #818cf8; }
-    .vocab-list-item-text { font-weight: bold; color: #818cf8; }
+    .vocab-list-item-text { font-weight: bold; color: #818cf8; word-break: break-all; margin-right: 10px; }
     .vocab-header { display: flex; justify-content: space-between; align-items: center; }
     .vocab-header h4 { margin: 0; font-size: 14px; color: #d1d5db; }
     .vocab-actions { display: flex; gap: 12px; }
@@ -67,7 +77,7 @@
     }
     
     .view-tabs { display: flex; gap: 16px; margin-bottom: 24px; width: 100%; max-width: 800px; }
-    .view-tab { padding: 10px 20px; font-size: 16px; font-weight: 600; border: none; background: transparent; cursor: pointer; border-bottom: 3px solid transparent; color: #9ca3af; transition: 0.2s;}
+    .view-tab { padding: 10px 20px; font-size: 16px; font-weight: 600; border: none; background: transparent; cursor: pointer; border-bottom: 3px solid transparent; color: #9ca3af; transition: 0.2s; flex: 1; text-align: center;}
     .view-tab.active { color: #818cf8; border-bottom-color: #818cf8; }
     .view-tab:hover:not(.active) { color: #e5e7eb; }
 
@@ -79,21 +89,21 @@
 
     /* ========== 阅读理解题样式 ========== */
     .quiz-item { margin-bottom: 24px; padding-bottom: 20px; border-bottom: 1px solid #333; }
-    .quiz-options label { display: block; margin: 10px 0; cursor: pointer; font-size: 16px; color: #d1d5db; }
+    .quiz-options label { display: block; margin: 10px 0; cursor: pointer; font-size: 16px; color: #d1d5db; line-height: 1.4; }
     .result-box { padding: 12px 16px; border-radius: 8px; margin-top: 12px; background-color: #2c2c2c; }
     .result-box p { margin: 4px 0; }
 
     /* ========== 背单词测试区样式 ========== */
     .vocab-row { display: flex; align-items: center; gap: 16px; margin-bottom: 16px; padding: 12px; background: #2c2c2c; border-radius: 8px; border: 1px solid #444; }
     .vocab-zh { flex: 1; font-size: 16px; font-weight: bold; color: #d1d5db;}
-    .vocab-de-input { flex: 1; padding: 10px; font-size: 16px; border: 2px solid #555; background-color: #121212; border-radius: 6px; outline: none; transition: 0.2s; }
+    .vocab-de-input { flex: 1; padding: 10px; font-size: 16px; border: 2px solid #555; background-color: #121212; border-radius: 6px; outline: none; transition: 0.2s; width: 100%; }
     .vocab-de-input.correct { border-color: #059669 !important; background-color: #064e3b !important; color: #a7f3d0 !important; }
     .vocab-de-input.incorrect { border-color: #dc2626 !important; background-color: #7f1d1d !important; color: #fecaca !important; }
     .status-icon { font-size: 20px; width: 24px; text-align: center; }
 
     /* ========== 完形填空区样式 ========== */
     .cloze-container { line-height: 2.8; font-size: 18px; color: #e5e7eb; }
-    .cloze-input-wrapper { display: inline-flex; align-items: center; gap: 6px; margin: 4px 6px; vertical-align: middle; white-space: nowrap; }
+    .cloze-input-wrapper { display: inline-flex; align-items: center; gap: 6px; margin: 4px 6px; vertical-align: middle; white-space: normal; }
     .cloze-input { width: 140px; padding: 6px 10px; font-size: 16px; border: 2px solid #555; background-color: #2c2c2c; color: #e5e7eb; border-radius: 6px; outline: none; transition: 0.2s; }
     .cloze-input:focus { border-color: #818cf8; }
     .cloze-input.correct { border-color: #059669; background-color: #064e3b; color: #a7f3d0; }
@@ -114,19 +124,66 @@
     .chat-message { display: flex; max-width: 85%; }
     .chat-message.user { align-self: flex-end; }
     .chat-message.assistant { align-self: flex-start; }
-    .message-content { padding: 10px 14px; border-radius: 8px; font-size: 14px; line-height: 1.5; white-space: pre-wrap; }
+    .message-content { padding: 10px 14px; border-radius: 8px; font-size: 14px; line-height: 1.5; white-space: pre-wrap; word-break: break-word; }
     .user .message-content { background-color: #4f46e5; color: white; border-bottom-right-radius: 0; }
     .assistant .message-content { background-color: #2c2c2c; border: 1px solid #444; border-bottom-left-radius: 0; color: #e5e7eb; }
     .chat-footer { padding: 12px; border-top: 1px solid #333; display: flex; gap: 8px; background: #1e1e1e; }
     .chat-footer input { flex: 1; }
+
+    /* ================= 移动端响应式适配 ================= */
+    @media (max-width: 768px) {
+      .app-container { flex-direction: column; }
+      .mobile-header { display: flex; }
+      .mobile-close-btn { display: block; }
+      
+      /* 左侧边栏变为抽屉式滑出 */
+      .sidebar {
+        position: absolute; top: 0; left: 0; transform: translateX(-100%);
+        width: 85vw; min-width: 280px; max-width: 400px;
+      }
+      .sidebar.open { transform: translateX(0); }
+      
+      /* 缩小主区域的内边距 */
+      .main-content { padding: 20px 15px; }
+      
+      /* 调整堆叠布局 */
+      .flex-row { flex-direction: column; gap: 10px; }
+      .flex-row > div, .flex-row > input, .flex-row > button { width: 100% !important; }
+      
+      .view-tabs { gap: 8px; margin-bottom: 16px; }
+      .view-tab { padding: 8px 10px; font-size: 14px; }
+      
+      .article-card, .quiz-card, .vocab-practice-card { padding: 20px; margin-bottom: 16px; }
+      
+      /* 悬浮组件在移动端的大小及位置重置 */
+      .translation-tooltip { 
+        width: 90vw !important; max-width: none !important; 
+        left: 5vw !important; transform: none !important; 
+      }
+      
+      .chat-panel { width: 90vw; height: 60vh; position: fixed; right: 5vw; bottom: 85px; }
+      .floating-container { bottom: 20px; right: 20px; }
+      .floating-ball { width: 50px; height: 50px; font-size: 20px; }
+      
+      /* 听写测试区换行自适应 */
+      .vocab-row { flex-direction: column; align-items: flex-start; gap: 8px; }
+      .vocab-zh { font-size: 15px; }
+      .vocab-de-input { width: 100%; }
+      .status-icon { align-self: flex-end; margin-top: -45px; } /* 移动端勾叉位置微调 */
+    }
   </style>
 </head>
 <body>
 
 <div id="app" class="app-container">
   
-  <aside class="sidebar">
-    <h2>DE-Reader Builder</h2>
+  <div class="sidebar-overlay" :class="{ show: isSidebarOpen }" @click="isSidebarOpen = false"></div>
+
+  <aside class="sidebar" :class="{ open: isSidebarOpen }">
+    <div class="sidebar-header">
+       <h2>DE-Reader Builder</h2>
+       <button class="mobile-close-btn" @click="isSidebarOpen = false">&times;</button>
+    </div>
     
     <div class="config-section">
       <h3>1. API 配置</h3>
@@ -209,21 +266,24 @@
 
   <main class="main-content">
     
+    <div class="mobile-header">
+        <button class="menu-btn" @click="isSidebarOpen = true">☰</button>
+        <h1 style="font-size: 18px; color: #818cf8; margin: 0; text-align: center; flex: 1;">DE-Reader</h1>
+        <div style="width: 24px;"></div> </div>
+
     <div class="view-tabs">
-        <button class="view-tab" :class="{active: currentView === 'article'}" @click="currentView = 'article'">📖 文章与阅读理解</button>
+        <button class="view-tab" :class="{active: currentView === 'article'}" @click="currentView = 'article'">📖 文章与题目</button>
         <button class="view-tab" :class="{active: currentView === 'cloze'}" @click="currentView = 'cloze'">🕳️ 完形填空</button>
         <button class="view-tab" :class="{active: currentView === 'vocab'}" @click="currentView = 'vocab'">📝 背单词区</button>
     </div>
 
-    <!-- 1. 📖 文章区域 -->
     <div v-if="currentView === 'article'" style="width: 100%; display: flex; flex-direction: column; align-items: center;">
         <div v-if="articleResult" class="article-card">
-          <div class="article-body" v-html="formattedArticle" @mouseup="handleSelection"></div>
+          <div class="article-body" v-html="formattedArticle" @mouseup="handleSelection" @touchend="handleSelection"></div>
         </div>
-        <div v-else style="color: #6b7280; margin-top: 100px;">在左侧生成文章后，将在此处显示。</div>
+        <div v-else style="color: #6b7280; margin-top: 100px; text-align: center;">在左侧生成文章后，将在此处显示。</div>
 
-        <!-- 题干划词翻译 -->
-        <div v-if="quizQuestions.length > 0" class="quiz-card" @mouseup="handleSelection">
+        <div v-if="quizQuestions.length > 0" class="quiz-card" @mouseup="handleSelection" @touchend="handleSelection">
             <h3 style="margin-top: 0; color: #818cf8;">阅读理解 (Leseverstehen)</h3>
             <div v-for="(q, i) in quizQuestions" :key="i" class="quiz-item">
                 <p><strong>{{ i+1 }}. {{ q.question }}</strong></p>
@@ -239,12 +299,11 @@
                     <p style="font-size: 14px; margin-top: 8px; color: #d1d5db;"><strong>解析：</strong>{{ q.explanation }}</p>
                 </div>
             </div>
-            <button @click="submitQuiz" class="btn-primary" v-if="!quizQuestions[0].showResult">提交答案并查看解析</button>
-            <button @click="quizQuestions = []" class="btn-secondary" v-else>清除题目</button>
+            <button @click="submitQuiz" class="btn-primary" style="width: 100%;" v-if="!quizQuestions[0].showResult">提交答案并查看解析</button>
+            <button @click="quizQuestions = []" class="btn-secondary" style="width: 100%;" v-else>清除题目</button>
         </div>
     </div>
 
-    <!-- 2. 🕳️ 完形填空区域 -->
     <div v-if="currentView === 'cloze'" style="width: 100%; display: flex; flex-direction: column; align-items: center;">
         <div class="vocab-practice-card cloze-container">
             <h2 style="margin-top: 0; color: #818cf8;">🕳️ 完形填空特训 (Lückentext)</h2>
@@ -273,7 +332,6 @@
         </div>
     </div>
 
-    <!-- 3. 📝 背单词区域 -->
     <div v-if="currentView === 'vocab'" style="width: 100%; display: flex; flex-direction: column; align-items: center;">
         <div class="vocab-practice-card">
             <h2 style="margin-top: 0; color: #818cf8;">🧠 德语单词听写</h2>
@@ -281,7 +339,7 @@
             <p v-else-if="vocabPracticeList.length === 0" style="color: #6b7280;">请在左侧输入你想复习的单词后点击“开启背单词测试”。</p>
             
             <div v-else>
-                <p style="color: #9ca3af; font-size: 14px; margin-bottom: 24px;">根据左侧的中文释义，在右侧框中输入德语单词。系统会自动校验拼写。</p>
+                <p style="color: #9ca3af; font-size: 14px; margin-bottom: 24px;">根据中文释义，输入德文单词。无需回车，拼写正确将自动变绿。</p>
                 <div v-for="(item, index) in vocabPracticeList" :key="index" class="vocab-row">
                     <div class="vocab-zh">{{ item.zh }}</div>
                     <input 
@@ -303,7 +361,6 @@
     </div>
   </main>
 
-  <!-- 悬浮划词翻译 -->
   <div v-if="tooltip.visible" class="translation-tooltip" :style="{ left: tooltip.x + 'px', top: tooltip.isAbove ? 'auto' : tooltip.y + 'px', bottom: tooltip.isAbove ? tooltip.y + 'px' : 'auto' }">
     <div class="tooltip-header">
       <span class="tooltip-title">💡 划词翻译</span>
@@ -314,16 +371,15 @@
       <div v-else class="tooltip-text" v-html="formattedTooltip"></div>
     </div>
     <div class="tooltip-footer" v-if="!tooltip.isLoading && tooltip.translation && isSingleWord(tooltip.text)">
-      <button @click="addTooltipWordToVocab" class="btn-primary" style="padding: 4px 12px; font-size: 12px; width: 100%; border-radius: 0 0 8px 8px;">加入生词本 (自动提取原形)</button>
+      <button @click="addTooltipWordToVocab" class="btn-primary" style="padding: 8px 12px; font-size: 14px; width: 100%; border-radius: 0 0 8px 8px;">加入生词本 (提取原形)</button>
     </div>
   </div>
 
-  <!-- AI 答疑悬浮窗 -->
   <div class="floating-container">
     <div v-if="isChatOpen" class="chat-panel">
       <div class="chat-header">
         <span>德语 AI 助手</span>
-        <button @click="isChatOpen = false" style="background:none;border:none;color:white;font-size:20px;cursor:pointer;">&times;</button>
+        <button @click="isChatOpen = false" style="background:none;border:none;color:white;font-size:24px;cursor:pointer;line-height:1;">&times;</button>
       </div>
       <div class="chat-messages" ref="chatScrollRef">
         <div v-for="(msg, index) in chatHistory" :key="index" :class="['chat-message', msg.role]">
@@ -336,7 +392,7 @@
       </div>
     </div>
     <button @click="isChatOpen = !isChatOpen" class="floating-ball" title="随时向 AI 提问">
-      <span v-if="!isChatOpen">💬</span><span v-else>&times;</span>
+      <span v-if="!isChatOpen">💬</span><span v-else style="font-size:28px;line-height:1;">&times;</span>
     </button>
   </div>
 </div>
@@ -346,6 +402,7 @@
 
   createApp({
     setup() {
+      const isSidebarOpen = ref(false); // 响应式侧边栏状态控制
       const currentView = ref('article'); 
 
       const config = reactive({ baseUrl: 'https://api.deepseek.com/v1', apiKey: '' });
@@ -504,7 +561,7 @@
       function generateArticleWithWords() {
         const wordList = settings.words.split('\n').map(w => w.trim()).filter(w => w);
         if (wordList.length === 0) return alert('请至少输入一个单词。');
-        articleResult.value = ''; quizQuestions.value = []; clozeParts.value = []; isGeneratingArticle.value = true; currentView.value = 'article';
+        articleResult.value = ''; quizQuestions.value = []; clozeParts.value = []; isGeneratingArticle.value = true; currentView.value = 'article'; isSidebarOpen.value = false; // 生成时在手机上自动收起侧边栏
         const systemPrompt = `你是一位德语教师。请根据单词列表生成德语阅读文章。要求：1. 难度 ${settings.level} 等级，字数约 ${settings.wordCount} 词。2. 必须包含文中单词并严格使用格式 \`**德文单词**\` 高亮。`;
         fetchAIStream(
           [{ role: 'system', content: systemPrompt }, { role: 'user', content: `开始生成，必须包含：\n${wordList.join('\n')}` }],
@@ -516,7 +573,7 @@
       function generateArticleWithTopic() {
         const topic = settings.topic.trim();
         if (!topic) return alert('请先在输入框输入你想阅读的文章主题。');
-        articleResult.value = ''; quizQuestions.value = []; clozeParts.value = []; isGeneratingArticle.value = true; currentView.value = 'article';
+        articleResult.value = ''; quizQuestions.value = []; clozeParts.value = []; isGeneratingArticle.value = true; currentView.value = 'article'; isSidebarOpen.value = false;
         
         const systemPrompt = `你是一位德语教师。请根据用户提供的提示词或主题生成一篇德语文章。要求：1. 难度 ${settings.level} 等级，字数约 ${settings.wordCount} 词。2. 把重要的 5-8 个词汇用 \`**德文单词**\` 格式高亮。`;
         fetchAIStream(
@@ -529,7 +586,7 @@
       // ================= 阅读理解出题 =================
       async function generateQuestions() {
         if (!articleResult.value) return;
-        currentView.value = 'article';
+        currentView.value = 'article'; isSidebarOpen.value = false;
         const prompt = `你是一个专业的德语老师。请根据以下德语文章出 ${settings.questionCount} 道阅读理解题。题型为单项选择题（4个选项）或判断题（Richtig/Falsch），完全模拟歌德考试或TestDaF格式。
 请严格返回 JSON 数组格式，绝不能包含 Markdown 标记、\`\`\`json 符号或任何额外文字！
 JSON 结构必须是：
@@ -561,7 +618,7 @@ JSON 结构必须是：
       // ================= 完形填空 (Lückentext) =================
       async function generateCloze() {
           if (!articleResult.value) return;
-          currentView.value = 'cloze';
+          currentView.value = 'cloze'; isSidebarOpen.value = false;
           clozeParts.value = [];
           
           const prompt = `你是一个德语老师。请根据以下德语文章生成一段完形填空。
@@ -623,7 +680,7 @@ JSON 结构必须是：
         const inputWords = settings.words.split('\n').map(w => w.trim()).filter(w => w);
         if (inputWords.length === 0) return alert('请先在上方输入框中填入你想复习的德文单词。');
         
-        currentView.value = 'vocab';
+        currentView.value = 'vocab'; isSidebarOpen.value = false;
         vocabPracticeList.value = [];
         
         const prompt = `请将以下德语单词翻译成中文。
@@ -697,7 +754,10 @@ JSON 结构必须是：
       function isSingleWord(text) { return !text.trim().includes(' '); }
 
       // ================= 悬浮划词翻译 =================
-      function handleSelection() {
+      function handleSelection(e) {
+        // 防止在输入框内划词触发翻译弹窗
+        if (e && e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
+        
         setTimeout(() => {
           const selection = window.getSelection();
           const text = selection.toString().trim();
@@ -729,7 +789,6 @@ JSON 结构必须是：
           if (translateAbortController) translateAbortController.abort();
           translateAbortController = new AbortController();
 
-          // 核心更新：长句/词组拆解翻译 Prompt
           const sysPrompt = `你是专业的德语老师。翻译用户选中的德文。
 
 如果只有一个单词：
@@ -779,6 +838,7 @@ JSON 结构必须是：
       }
 
       return {
+        isSidebarOpen,
         currentView,
         config, settings, articleResult, isGeneratingArticle,
         quizQuestions, isGeneratingQuestions, generateQuestions, submitQuiz,
