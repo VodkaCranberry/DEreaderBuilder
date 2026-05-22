@@ -93,6 +93,60 @@
     
     .label-text { font-size: 13px; color: #93c5fd; font-weight: 500; margin-bottom: 6px; display: block; font-family: 'Courier New', Courier, monospace; }
     
+    /* ========== 收纳盒 (Accordion) 设计 ========== */
+    .accordion-container {
+      border: 1px solid rgba(59, 130, 246, 0.3);
+      border-radius: 6px;
+      overflow: hidden;
+      background: rgba(15, 23, 42, 0.6);
+      display: flex;
+      flex-direction: column;
+    }
+    .accordion-item {
+      border-bottom: 1px solid rgba(59, 130, 246, 0.2);
+    }
+    .accordion-item:last-child {
+      border-bottom: none;
+    }
+    .accordion-header {
+      padding: 12px 14px;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(30, 41, 59, 0.8);
+      color: #93c5fd;
+      font-size: 14px;
+      font-weight: 600;
+      transition: 0.3s;
+    }
+    .accordion-header:hover {
+      background: rgba(59, 130, 246, 0.15);
+      color: #60a5fa;
+    }
+    .accordion-item.open .accordion-header {
+      background: rgba(37, 99, 235, 0.2);
+      color: #60a5fa;
+      border-bottom: 1px dashed rgba(59, 130, 246, 0.3);
+    }
+    .accordion-body {
+      padding: 16px 14px;
+      background: rgba(15, 23, 42, 0.8);
+      display: none;
+    }
+    .accordion-item.open .accordion-body {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .accordion-arrow {
+      transition: transform 0.3s;
+      font-size: 12px;
+    }
+    .accordion-item.open .accordion-arrow {
+      transform: rotate(180deg);
+    }
+
     /* ========== 按钮样式 (沉稳深海蓝) ========== */
     .btn-primary { 
       background: linear-gradient(135deg, #1e40af, #2563eb); color: white; 
@@ -254,7 +308,7 @@
 
   <div class="sidebar-overlay" :class="{ show: isSidebarOpen }" @click="isSidebarOpen = false"></div>
 
-  <!-- 修改点1：无论桌面还是移动端，都由 isSidebarOpen 统一控制展开与折叠 -->
+  <!-- 无论桌面还是移动端，都由 isSidebarOpen 统一控制展开与折叠 -->
   <aside class="sidebar" :class="{ open: isSidebarOpen, closed: !isSidebarOpen }">
     <div class="sidebar-header">
        <h2>DE-Reader</h2>
@@ -267,39 +321,93 @@
       <input v-model="config.apiKey" type="password" placeholder="输入 API Key" />
     </div>
 
+    <!-- 优化后的收纳盒版阅读生成界面 -->
     <div class="input-section">
       <h3>2. 阅读生成</h3>
-      <div class="flex-row">
-        <div style="flex: 1;">
-            <span class="label-text">难度等级</span>
-            <select v-model="settings.level">
-                <option v-for="lvl in ['A1', 'A2', 'B1', 'B2', 'C1', 'C2']" :key="lvl" :value="lvl">{{ lvl }}</option>
-            </select>
-        </div>
-        <div style="flex: 1;">
-            <span class="label-text">目标词数</span>
-            <input v-model.number="settings.wordCount" type="number" step="50" min="50" max="2000" />
-        </div>
-      </div>
       
-      <div class="label-text" style="margin-top: 8px;">根据提示词生成：</div>
-      <input v-model="settings.topic" type="text" placeholder="输入你想阅读的主题，例如：柏林墙的历史" />
-      <button :disabled="isGeneratingArticle" @click="generateArticleWithTopic" class="btn-secondary" style="margin-top: 4px;">
-        ✨ 根据提示词生成 {{ settings.level }} 文章
-      </button>
+      <div class="accordion-container">
+        
+        <!-- Tab 1: 根据提示词生成 -->
+        <div class="accordion-item" :class="{ open: genMode === 'topic' }">
+          <div class="accordion-header" @click="genMode = genMode === 'topic' ? '' : 'topic'">
+            <span>💡 提示词/主题生成</span>
+            <span class="accordion-arrow">▼</span>
+          </div>
+          <div class="accordion-body">
+            <div class="flex-row">
+              <div style="flex: 1;">
+                  <span class="label-text">难度等级</span>
+                  <select v-model="settings.level">
+                      <option v-for="lvl in ['A1', 'A2', 'B1', 'B2', 'C1', 'C2']" :key="lvl" :value="lvl">{{ lvl }}</option>
+                  </select>
+              </div>
+              <div style="flex: 1;">
+                  <span class="label-text">目标词数</span>
+                  <input v-model.number="settings.wordCount" type="number" step="50" min="50" max="2000" />
+              </div>
+            </div>
+            <input v-model="settings.topic" type="text" placeholder="输入你想阅读的主题，如：柏林墙的历史" />
+            <button :disabled="isGeneratingArticle" @click="generateArticleWithTopic" class="btn-primary">
+              ✨ 根据提示词生成 {{ settings.level }} 文章
+            </button>
+          </div>
+        </div>
 
-      <div class="label-text" style="margin-top: 8px;">基于单词库生成：</div>
-      <textarea v-model="settings.words" placeholder="输入你想复习的德文（每行一个）" rows="3"></textarea>
-      <button :disabled="isGeneratingArticle" @click="generateArticleWithWords" class="btn-primary">
-        {{ isGeneratingArticle ? '正在生成...' : '基于上方单词生成文章' }}
-      </button>
-      <button @click="startVocabPractice" class="btn-secondary" style="margin-top: 8px;">🧠 开启背单词测试</button>
+        <!-- Tab 2: 基于单词库生成 -->
+        <div class="accordion-item" :class="{ open: genMode === 'words' }">
+          <div class="accordion-header" @click="genMode = genMode === 'words' ? '' : 'words'">
+            <span>📚 基于单词库生成</span>
+            <span class="accordion-arrow">▼</span>
+          </div>
+          <div class="accordion-body">
+            <div class="flex-row">
+              <div style="flex: 1;">
+                  <span class="label-text">难度等级</span>
+                  <select v-model="settings.level">
+                      <option v-for="lvl in ['A1', 'A2', 'B1', 'B2', 'C1', 'C2']" :key="lvl" :value="lvl">{{ lvl }}</option>
+                  </select>
+              </div>
+              <div style="flex: 1;">
+                  <span class="label-text">目标词数</span>
+                  <input v-model.number="settings.wordCount" type="number" step="50" min="50" max="2000" />
+              </div>
+            </div>
+            <textarea v-model="settings.words" placeholder="输入你想复习的德文（每行一个）" rows="3"></textarea>
+            <button :disabled="isGeneratingArticle" @click="generateArticleWithWords" class="btn-primary">
+              {{ isGeneratingArticle ? '正在生成...' : '基于单词生成文章' }}
+            </button>
+            <button @click="startVocabPractice" class="btn-secondary">🧠 开启背单词测试</button>
+          </div>
+        </div>
 
-      <div class="label-text" style="margin-top: 12px; border-top: 1px dashed rgba(96,165,250,0.3); padding-top: 12px;">自动生成阅读理解题：</div>
+        <!-- Tab 3: 任意语言转德语 (NEW) -->
+        <div class="accordion-item" :class="{ open: genMode === 'translate' }">
+          <div class="accordion-header" @click="genMode = genMode === 'translate' ? '' : 'translate'">
+            <span>🌍 任意语言转德语</span>
+            <span class="accordion-arrow">▼</span>
+          </div>
+          <div class="accordion-body">
+            <div>
+              <span class="label-text">目标德语难度</span>
+              <select v-model="settings.translateLevel">
+                <option value="原文直接翻译">原文直接翻译</option>
+                <option v-for="lvl in ['A1', 'A2', 'B1', 'B2', 'C1', 'C2']" :key="lvl" :value="lvl">{{ lvl }} 难度改写</option>
+              </select>
+            </div>
+            <textarea v-model="settings.translateContent" placeholder="粘贴你需要转换的任意语言段落..." rows="4"></textarea>
+            <button :disabled="isGeneratingArticle" @click="generateTranslatedArticle" class="btn-primary">
+              🔄 翻译/转换为德语文章
+            </button>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="label-text" style="margin-top: 12px; border-top: 1px dashed rgba(96,165,250,0.3); padding-top: 12px;">文章课后练习生成：</div>
       <div class="flex-row" style="align-items: center;">
          <input type="number" v-model.number="settings.questionCount" min="1" max="10" placeholder="题目数量" style="width: 80px;" />
          <button @click="generateQuestions" class="btn-secondary" :disabled="!articleResult || isGeneratingQuestions" style="flex: 1;">
-             {{ isGeneratingQuestions ? '解析中...' : '📝 自动出题' }}
+             {{ isGeneratingQuestions ? '解析中...' : '📝 自动出阅读题' }}
          </button>
       </div>
       <button @click="generateCloze" class="btn-secondary" :disabled="!articleResult || isGeneratingCloze" style="margin-top: 8px; width: 100%;">
@@ -367,7 +475,7 @@
         <div v-if="articleResult" class="article-card">
           <div class="article-body" v-html="formattedArticle" @mouseup="handleSelection" @touchend="handleSelection"></div>
         </div>
-        <div v-else style="color: #64748b; margin-top: 100px; text-align: center;">在左侧生成文章后，将在此处显示。</div>
+        <div v-else style="color: #64748b; margin-top: 100px; text-align: center;">在左侧生成或翻译文章后，将在此处显示。</div>
 
         <div v-if="quizQuestions.length > 0" class="quiz-card" @mouseup="handleSelection" @touchend="handleSelection">
             <h3 style="margin-top: 0; color: #60a5fa;">阅读理解 (Leseverstehen)</h3>
@@ -422,7 +530,7 @@
         <div class="vocab-practice-card">
             <h2 style="margin-top: 0; color: #60a5fa;">🧠 德语单词听写</h2>
             <p v-if="isGeneratingVocabTest" style="color: #60a5fa;">正在请求 AI 翻译生词本并生成试卷，请稍候...</p>
-            <p v-else-if="vocabPracticeList.length === 0" style="color: #64748b;">请在左侧输入你想复习的单词后点击“开启背单词测试”。</p>
+            <p v-else-if="vocabPracticeList.length === 0" style="color: #64748b;">请在左侧打开“基于单词库生成”功能，输入生词后点击“开启背单词测试”。</p>
             
             <div v-else>
                 <p style="color: #93c5fd; font-size: 14px; margin-bottom: 24px;">根据中文释义，输入德文单词。拼写正确将自动变绿。</p>
@@ -466,7 +574,7 @@
 
   <div class="floating-container">
     <div v-if="isChatOpen" class="chat-panel">
-      <!-- 修改点2：聊天记录清理（新对话） -->
+      <!-- 聊天记录清理（新对话） -->
       <div class="chat-header">
         <span>德语 AI 助手</span>
         <div style="display:flex; gap: 12px; align-items: center;">
@@ -480,7 +588,7 @@
         </div>
       </div>
       <div class="chat-footer">
-        <!-- 修改点2：快捷输入按钮 -->
+        <!-- 快捷输入按钮 -->
         <div class="chat-footer-row">
             <button @click="sendQuickPrompt('请帮我翻译全文。')" class="btn-secondary" style="flex: 1; padding: 6px; font-size: 12px;">📄 翻译全文</button>
             <button @click="sendQuickPrompt('请帮我分析这篇文章的重点句型和语法。')" class="btn-secondary" style="flex: 1; padding: 6px; font-size: 12px;">🔍 重点句型</button>
@@ -506,8 +614,15 @@
       const isSidebarOpen = ref(window.innerWidth > 768); 
       const currentView = ref('article'); 
 
+      // 默认展开提示词面板
+      const genMode = ref('topic'); 
+
       const config = reactive({ baseUrl: 'https://api.deepseek.com/v1', apiKey: '' });
-      const settings = reactive({ level: 'B1', words: '', topic: '', wordCount: 300, questionCount: 3 });
+      // 新增翻译功能的缓存设置
+      const settings = reactive({ 
+        level: 'B1', words: '', topic: '', wordCount: 300, questionCount: 3,
+        translateLevel: '原文直接翻译', translateContent: ''
+      });
       
       const articleResult = ref('');
       const isGeneratingArticle = ref(false);
@@ -548,6 +663,8 @@
              settings.level = parsed.level || 'B1';
              settings.wordCount = parsed.wordCount || 300;
              settings.topic = parsed.topic || '';
+             settings.translateLevel = parsed.translateLevel || '原文直接翻译';
+             settings.translateContent = parsed.translateContent || '';
         }
         const savedVocab = localStorage.getItem('de_reader_vocab');
         if (savedVocab) vocabList.value = JSON.parse(savedVocab);
@@ -576,8 +693,8 @@
       });
 
       watch(config, (newVal) => { localStorage.setItem('de_reader_config_html', JSON.stringify(newVal)); }, { deep: true });
-      watch(() => [settings.level, settings.wordCount, settings.topic], ([level, count, topic]) => { 
-          localStorage.setItem('de_reader_settings', JSON.stringify({level, wordCount: count, topic})); 
+      watch(() => [settings.level, settings.wordCount, settings.topic, settings.translateLevel, settings.translateContent], ([level, count, topic, transLevel, transContent]) => { 
+          localStorage.setItem('de_reader_settings', JSON.stringify({level, wordCount: count, topic, translateLevel: transLevel, translateContent: transContent})); 
       });
       watch(vocabList, (newVal) => { localStorage.setItem('de_reader_vocab', JSON.stringify(newVal)); }, { deep: true });
 
@@ -708,6 +825,30 @@
         const systemPrompt = `你是一位德语教师。请根据用户提供的提示词或主题生成一篇德语文章。要求：1. 难度 ${settings.level} 等级，字数约 ${settings.wordCount} 词。2. 把重要的 5-8 个词汇用 \`**德文单词**\` 格式高亮。`;
         fetchAIStream(
           [{ role: 'system', content: systemPrompt }, { role: 'user', content: `请以这个主题或提示词生成文章：${topic}` }],
+          (chunk) => { articleResult.value += chunk; },
+          () => { isGeneratingArticle.value = false; }
+        );
+      }
+
+      // 新增：任意语言翻译与改写为德语
+      function generateTranslatedArticle() {
+        const content = settings.translateContent.trim();
+        if (!content) return alert('请先粘贴需要翻译的文章段落。');
+        
+        articleResult.value = ''; quizQuestions.value = []; clozeParts.value = []; isGeneratingArticle.value = true; currentView.value = 'article'; if(window.innerWidth <= 768) isSidebarOpen.value = false;
+        
+        const levelInstruction = settings.translateLevel === '原文直接翻译' 
+            ? '忠实于原文进行直接翻译' 
+            : `改写为符合 ${settings.translateLevel} 难度的德语文章`;
+
+        const systemPrompt = `你是一位德语教师和资深翻译专家。请将用户提供的文章转换为德语文章。
+要求：
+1. 难度/风格设定：${levelInstruction}。
+2. 必须把文中重要的 5-8 个德语重点词汇用 \`**德文单词**\` 格式高亮展示出来，以便学生学习。
+3. 【极其重要】在德语正文结束之后，请换行使用分割线，然后附上这段德语文章对应的完整中文翻译。`;
+
+        fetchAIStream(
+          [{ role: 'system', content: systemPrompt }, { role: 'user', content: content }],
           (chunk) => { articleResult.value += chunk; },
           () => { isGeneratingArticle.value = false; }
         );
@@ -990,6 +1131,7 @@ JSON 结构必须是：
       return {
         isSidebarOpen,
         currentView,
+        genMode, // 收纳盒模式状态
         config, settings, articleResult, isGeneratingArticle,
         quizQuestions, isGeneratingQuestions, generateQuestions, submitQuiz,
         clozeData, clozeParts, isGeneratingCloze, generateCloze, checkCloze,
@@ -997,7 +1139,7 @@ JSON 结构必须是：
         vocabPracticeList, isGeneratingVocabTest, startVocabPractice, checkVocab, showVocabAnswer,
         tooltip, handleSelection, closeTooltip, formattedTooltip, formattedDictResult,
         isChatOpen, chatInput, isChatLoading, chatScrollRef, chatHistory, formatChatMessage, startNewChat, sendQuickPrompt,
-        formattedArticle, generateArticleWithWords, generateArticleWithTopic, sendChatMessage
+        formattedArticle, generateArticleWithWords, generateArticleWithTopic, generateTranslatedArticle, sendChatMessage
       };
     }
   }).mount('#app');
