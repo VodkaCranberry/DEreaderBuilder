@@ -6,147 +6,206 @@
   <title>德语阅读生成器与AI助教</title>
   <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
   <style>
-    /* ========== 全局默认纯净黑夜模式 ========== */
-    * { box-sizing: border-box; transition: background-color 0.2s, border-color 0.2s; }
-    body { margin: 0; padding: 0; background-color: #121212; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; color: #e5e7eb; }
+    /* ========== 全局深海赛博复古未来风格 ========== */
+    * { box-sizing: border-box; transition: background-color 0.3s, border-color 0.3s, box-shadow 0.3s; }
     
+    body { 
+      margin: 0; padding: 0; 
+      /* 深海深色背景 + 复古全息网格 */
+      background-color: #030811; 
+      background-image: 
+        linear-gradient(rgba(0, 216, 255, 0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 216, 255, 0.04) 1px, transparent 1px);
+      background-size: 30px 30px;
+      font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
+      color: #e0f2fe; 
+    }
+    
+    ::-webkit-scrollbar { width: 8px; }
+    ::-webkit-scrollbar-track { background: rgba(0, 216, 255, 0.05); }
+    ::-webkit-scrollbar-thumb { background: rgba(0, 216, 255, 0.3); border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #00d8ff; }
+
     .app-container {
       display: flex; flex-direction: row; flex-wrap: nowrap; 
       width: 100vw; height: 100vh; overflow: hidden; position: relative;
     }
 
-    /* ========== 移动端头部与遮罩 (新增) ========== */
-    .mobile-header { display: none; background-color: #1e1e1e; padding: 12px 20px; align-items: center; justify-content: space-between; border-bottom: 1px solid #333; width: 100%; flex-shrink: 0; z-index: 90; }
-    .menu-btn { background: none; border: none; color: #e5e7eb; font-size: 24px; cursor: pointer; padding: 0; line-height: 1; }
-    .sidebar-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); z-index: 100; backdrop-filter: blur(2px); opacity: 0; transition: opacity 0.3s; pointer-events: none; }
+    /* ========== 移动端头部与遮罩 ========== */
+    .mobile-header { display: none; background: rgba(6, 15, 30, 0.9); backdrop-filter: blur(10px); padding: 12px 20px; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(0, 216, 255, 0.2); width: 100%; flex-shrink: 0; z-index: 90; box-shadow: 0 2px 15px rgba(0,0,0,0.5); }
+    .menu-btn { background: none; border: none; color: #00d8ff; font-size: 24px; cursor: pointer; padding: 0; line-height: 1; text-shadow: 0 0 5px rgba(0, 216, 255, 0.5); }
+    .sidebar-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 100; backdrop-filter: blur(3px); opacity: 0; transition: opacity 0.3s; pointer-events: none; }
     .sidebar-overlay.show { display: block; opacity: 1; pointer-events: auto; }
 
     /* ========== 左侧边栏 ========== */
     .sidebar {
       width: 400px; min-width: 400px; flex-shrink: 0; 
-      background-color: #1e1e1e; border-right: 1px solid #333;
+      background: rgba(6, 15, 30, 0.85); backdrop-filter: blur(15px);
+      border-right: 1px solid rgba(0, 216, 255, 0.2);
       padding: 24px; display: flex; flex-direction: column; gap: 20px;
-      box-shadow: 2px 0 8px rgba(0,0,0,0.5); height: 100%; overflow-y: auto;
+      box-shadow: 4px 0 20px rgba(0, 0, 0, 0.6); height: 100%; overflow-y: auto;
       z-index: 101; transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
     
     .sidebar-header { display: flex; justify-content: space-between; align-items: center; }
-    .sidebar-header h2 { margin: 0; font-size: 22px; color: #818cf8; }
-    .mobile-close-btn { display: none; background: none; border: none; color: #9ca3af; font-size: 28px; cursor: pointer; padding: 0; line-height: 1; }
+    .sidebar-header h2 { margin: 0; font-size: 22px; color: #00d8ff; text-shadow: 0 0 8px rgba(0,216,255,0.4); font-family: 'Courier New', Courier, monospace; letter-spacing: 1px; }
+    .mobile-close-btn { display: none; background: none; border: none; color: #00d8ff; font-size: 28px; cursor: pointer; padding: 0; line-height: 1; text-shadow: 0 0 5px rgba(0, 216, 255, 0.5); }
     
-    .config-section, .input-section, .vocab-section { display: flex; flex-direction: column; gap: 10px; }
-    .sidebar h3 { margin: 0; font-size: 15px; color: #9ca3af; border-bottom: 1px solid #333; padding-bottom: 6px; }
+    .config-section, .input-section, .vocab-section { display: flex; flex-direction: column; gap: 12px; }
+    .sidebar h3 { margin: 0; font-size: 14px; color: #38bdf8; border-bottom: 1px dashed rgba(0, 216, 255, 0.3); padding-bottom: 6px; text-transform: uppercase; letter-spacing: 1px; font-family: 'Courier New', Courier, monospace; }
     
     input[type="text"], input[type="number"], input[type="password"], select, textarea {
-      width: 100%; padding: 10px; border: 1px solid #444; border-radius: 6px;
-      font-size: 14px; background-color: #2c2c2c; color: #e5e7eb; transition: 0.2s; resize: vertical;
+      width: 100%; padding: 10px; border: 1px solid rgba(0, 216, 255, 0.2); border-radius: 4px;
+      font-size: 14px; background-color: rgba(2, 10, 20, 0.6); color: #00e5ff; transition: 0.3s; resize: vertical;
+      font-family: inherit;
     }
-    input:focus, select:focus, textarea:focus { border-color: #818cf8; outline: none; }
-    .label-text { font-size: 13px; color: #d1d5db; font-weight: 500; margin-bottom: 6px; display: block;}
+    input:focus, select:focus, textarea:focus { border-color: #00d8ff; outline: none; box-shadow: 0 0 10px rgba(0, 216, 255, 0.3); background-color: rgba(0, 216, 255, 0.05); }
+    input::placeholder, textarea::placeholder { color: #0f4a73; }
+    
+    .label-text { font-size: 13px; color: #7dd3fc; font-weight: 500; margin-bottom: 6px; display: block; font-family: 'Courier New', Courier, monospace; }
     
     /* ========== 按钮样式 ========== */
-    .btn-primary { background-color: #4f46e5; color: white; border: none; padding: 10px; border-radius: 6px; font-weight: 600; cursor: pointer; transition: 0.2s; }
-    .btn-primary:hover { background-color: #4338ca; }
-    .btn-primary:disabled { background-color: #4b5563; color: #9ca3af; cursor: not-allowed; opacity: 0.8; }
+    .btn-primary { 
+      background: linear-gradient(135deg, #0077b6, #00b4d8); color: white; 
+      border: 1px solid #00d8ff; padding: 10px; border-radius: 4px; 
+      font-weight: bold; cursor: pointer; transition: 0.3s; 
+      letter-spacing: 1px;
+      box-shadow: 0 0 10px rgba(0, 180, 216, 0.3);
+      text-shadow: 0 0 3px rgba(255,255,255,0.5);
+    }
+    .btn-primary:hover { background: linear-gradient(135deg, #00b4d8, #0077b6); box-shadow: 0 0 15px rgba(0, 216, 255, 0.6); }
+    .btn-primary:disabled { background: #0f172a; border-color: #1e293b; color: #475569; box-shadow: none; cursor: not-allowed; text-shadow: none; }
     
-    .btn-secondary { background-color: transparent; color: #d1d5db; border: 1px solid #555; padding: 10px; border-radius: 6px; font-weight: 600; cursor: pointer; transition: 0.2s; }
-    .btn-secondary:hover { background-color: #333; }
-    .btn-secondary:disabled { color: #6b7280; border-color: #444; cursor: not-allowed;}
+    .btn-secondary { 
+      background: rgba(0, 216, 255, 0.05); color: #00d8ff; 
+      border: 1px solid rgba(0, 216, 255, 0.4); padding: 10px; border-radius: 4px; 
+      font-weight: 600; cursor: pointer; transition: 0.3s; 
+      text-shadow: 0 0 5px rgba(0, 216, 255, 0.3);
+    }
+    .btn-secondary:hover { background: rgba(0, 216, 255, 0.15); box-shadow: 0 0 12px rgba(0, 216, 255, 0.4); border-color: #00d8ff; }
+    .btn-secondary:disabled { color: #334155; border-color: #1e293b; background: transparent; box-shadow: none; cursor: not-allowed; text-shadow:none; }
 
     .flex-row { display: flex; gap: 12px; align-items: flex-start; }
     .flex-row input, .flex-row select { flex: 1; }
     
-    /* ========== 生词本列表样式 ========== */
-    .dict-result-box { background: #2c2c2c; border: 1px solid #444; border-radius: 8px; padding: 12px; font-size: 14px; line-height: 1.6; max-height: 300px; overflow-y: auto; }
+    /* ========== 生词本及作者标签 ========== */
+    .dict-result-box { background: rgba(10, 25, 45, 0.8); border: 1px solid rgba(0, 216, 255, 0.2); border-radius: 4px; padding: 12px; font-size: 14px; line-height: 1.6; max-height: 300px; overflow-y: auto; box-shadow: inset 0 0 10px rgba(0,0,0,0.5); }
     .dict-item { margin-bottom: 8px; }
     .vocab-list-container { display: flex; flex-direction: column; gap: 8px; max-height: 250px; overflow-y: auto; padding: 4px 0; }
-    .vocab-list-item { display: flex; justify-content: space-between; align-items: center; background: #2c2c2c; border: 1px solid #444; padding: 8px 12px; border-radius: 6px; font-size: 14px; transition: 0.2s; }
-    .vocab-list-item:hover { border-color: #818cf8; }
-    .vocab-list-item-text { font-weight: bold; color: #818cf8; word-break: break-all; margin-right: 10px; }
+    .vocab-list-item { display: flex; justify-content: space-between; align-items: center; background: rgba(10, 25, 45, 0.8); border: 1px solid rgba(0, 216, 255, 0.15); padding: 8px 12px; border-radius: 4px; font-size: 14px; transition: 0.3s; }
+    .vocab-list-item:hover { border-color: #00d8ff; box-shadow: 0 0 8px rgba(0, 216, 255, 0.2); }
+    .vocab-list-item-text { font-weight: bold; color: #00e5ff; word-break: break-all; margin-right: 10px; text-shadow: 0 0 3px rgba(0, 229, 255, 0.4); }
     .vocab-header { display: flex; justify-content: space-between; align-items: center; }
-    .vocab-header h4 { margin: 0; font-size: 14px; color: #d1d5db; }
+    .vocab-header h4 { margin: 0; font-size: 14px; color: #7dd3fc; }
     .vocab-actions { display: flex; gap: 12px; }
-    .btn-text { background: none; border: none; color: #818cf8; cursor: pointer; font-size: 13px; padding: 0; }
-    .btn-text.danger { color: #ef4444; font-size: 16px; font-weight: bold; padding: 0 4px; }
-    .btn-text.danger:hover { background: #7f1d1d; border-radius: 4px; }
+    .btn-text { background: none; border: none; color: #00d8ff; cursor: pointer; font-size: 13px; padding: 0; transition: 0.3s; }
+    .btn-text:hover { text-shadow: 0 0 8px #00d8ff; }
+    .btn-text.danger { color: #ff003c; font-size: 16px; font-weight: bold; padding: 0 4px; }
+    .btn-text.danger:hover { text-shadow: 0 0 8px #ff003c; }
+
+    /* 作者专属身份牌 */
+    .cyber-badge {
+      margin-top: 20px;
+      padding: 16px 12px 12px 12px;
+      border: 1px solid rgba(0, 216, 255, 0.3);
+      background: rgba(0, 216, 255, 0.02);
+      border-left: 4px solid #00d8ff;
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 12px;
+      color: #7dd3fc;
+      position: relative;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    }
+    .badge-title {
+      position: absolute; top: -10px; left: 10px; background: #030811; padding: 0 6px;
+      color: #00d8ff; font-weight: bold; font-size: 11px; text-shadow: 0 0 5px rgba(0,216,255,0.5);
+      border: 1px solid rgba(0, 216, 255, 0.3); border-radius: 2px;
+    }
+    .cyber-badge a { color: #00e5ff; text-decoration: none; text-shadow: 0 0 3px rgba(0,229,255,0.4); transition: 0.3s; }
+    .cyber-badge a:hover { color: #fff; text-shadow: 0 0 8px #00e5ff; }
 
     /* ========== 右侧主内容区 ========== */
     .main-content {
-      flex-grow: 1; flex-shrink: 1; min-width: 0; 
+      flex-grow: 1; flex-shrink: 1; min-width: 0; position: relative; z-index: 10;
       height: 100%; overflow-y: auto; padding: 40px; display: flex; flex-direction: column; align-items: center;
     }
     
     .view-tabs { display: flex; gap: 16px; margin-bottom: 24px; width: 100%; max-width: 800px; }
-    .view-tab { padding: 10px 20px; font-size: 16px; font-weight: 600; border: none; background: transparent; cursor: pointer; border-bottom: 3px solid transparent; color: #9ca3af; transition: 0.2s; flex: 1; text-align: center;}
-    .view-tab.active { color: #818cf8; border-bottom-color: #818cf8; }
-    .view-tab:hover:not(.active) { color: #e5e7eb; }
+    .view-tab { 
+      padding: 10px 20px; font-size: 16px; font-weight: 600; border: none; background: transparent; cursor: pointer; 
+      border-bottom: 2px solid transparent; color: #475569; transition: 0.3s; flex: 1; text-align: center;
+    }
+    .view-tab.active { color: #00d8ff; border-bottom-color: #00d8ff; text-shadow: 0 0 8px rgba(0,216,255,0.4); }
+    .view-tab:hover:not(.active) { color: #7dd3fc; }
 
     .article-card, .quiz-card, .vocab-practice-card {
-      width: 100%; max-width: 800px; background: #1e1e1e; padding: 40px;
-      border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); margin-bottom: 24px;
+      width: 100%; max-width: 800px; 
+      background: rgba(10, 20, 40, 0.7); backdrop-filter: blur(8px);
+      padding: 40px; border-radius: 8px; margin-bottom: 24px;
+      border: 1px solid rgba(0, 216, 255, 0.15);
+      box-shadow: inset 0 0 30px rgba(0, 180, 216, 0.05), 0 10px 30px rgba(0,0,0,0.5);
     }
-    .article-body { font-size: 18px; line-height: 2.0; letter-spacing: 0.5px; word-wrap: break-word; overflow-wrap: break-word; color: #e5e7eb; }
+    .article-body { font-size: 18px; line-height: 2.0; letter-spacing: 0.5px; word-wrap: break-word; overflow-wrap: break-word; color: #e0f2fe; }
 
     /* ========== 阅读理解题样式 ========== */
-    .quiz-item { margin-bottom: 24px; padding-bottom: 20px; border-bottom: 1px solid #333; }
-    .quiz-options label { display: block; margin: 10px 0; cursor: pointer; font-size: 16px; color: #d1d5db; line-height: 1.4; }
-    .result-box { padding: 12px 16px; border-radius: 8px; margin-top: 12px; background-color: #2c2c2c; }
+    .quiz-item { margin-bottom: 24px; padding-bottom: 20px; border-bottom: 1px dashed rgba(0, 216, 255, 0.2); }
+    .quiz-options label { display: block; margin: 10px 0; cursor: pointer; font-size: 16px; color: #bae6fd; line-height: 1.4; transition: 0.2s; }
+    .quiz-options label:hover { color: #00d8ff; text-shadow: 0 0 5px rgba(0,216,255,0.3); }
+    .result-box { padding: 12px 16px; border-radius: 4px; margin-top: 12px; border: 1px solid transparent; }
     .result-box p { margin: 4px 0; }
 
-    /* ========== 背单词测试区样式 ========== */
-    .vocab-row { display: flex; align-items: center; gap: 16px; margin-bottom: 16px; padding: 12px; background: #2c2c2c; border-radius: 8px; border: 1px solid #444; }
-    .vocab-zh { flex: 1; font-size: 16px; font-weight: bold; color: #d1d5db;}
-    .vocab-de-input { flex: 1; padding: 10px; font-size: 16px; border: 2px solid #555; background-color: #121212; border-radius: 6px; outline: none; transition: 0.2s; width: 100%; }
-    .vocab-de-input.correct { border-color: #059669 !important; background-color: #064e3b !important; color: #a7f3d0 !important; }
-    .vocab-de-input.incorrect { border-color: #dc2626 !important; background-color: #7f1d1d !important; color: #fecaca !important; }
-    .status-icon { font-size: 20px; width: 24px; text-align: center; }
+    /* ========== 背单词与完形测试区样式 (霓虹状态) ========== */
+    .vocab-row { display: flex; align-items: center; gap: 16px; margin-bottom: 16px; padding: 12px; background: rgba(2, 10, 20, 0.6); border-radius: 4px; border: 1px solid rgba(0, 216, 255, 0.1); box-shadow: inset 0 0 10px rgba(0,0,0,0.5); }
+    .vocab-zh { flex: 1; font-size: 16px; font-weight: bold; color: #bae6fd;}
+    .vocab-de-input { flex: 1; padding: 10px; font-size: 16px; border: 1px solid rgba(0,216,255,0.3); background-color: #020813; border-radius: 4px; outline: none; transition: 0.3s; width: 100%; color: #fff;}
+    
+    .vocab-de-input.correct, .cloze-input.correct { border-color: #00ff9d !important; background-color: rgba(0, 255, 157, 0.1) !important; color: #00ff9d !important; box-shadow: 0 0 10px rgba(0,255,157,0.4) !important; text-shadow: 0 0 5px #00ff9d; }
+    .vocab-de-input.incorrect, .cloze-input.incorrect { border-color: #ff003c !important; background-color: rgba(255, 0, 60, 0.1) !important; color: #ff003c !important; box-shadow: 0 0 10px rgba(255,0,60,0.4) !important; text-shadow: 0 0 5px #ff003c; }
+    .status-icon { font-size: 20px; width: 24px; text-align: center; text-shadow: 0 0 10px currentColor; }
 
     /* ========== 完形填空区样式 ========== */
-    .cloze-container { line-height: 2.8; font-size: 18px; color: #e5e7eb; }
+    .cloze-container { line-height: 2.8; font-size: 18px; color: #e0f2fe; }
     .cloze-input-wrapper { display: inline-flex; align-items: center; gap: 6px; margin: 4px 6px; vertical-align: middle; white-space: normal; }
-    .cloze-input { width: 140px; padding: 6px 10px; font-size: 16px; border: 2px solid #555; background-color: #2c2c2c; color: #e5e7eb; border-radius: 6px; outline: none; transition: 0.2s; }
-    .cloze-input:focus { border-color: #818cf8; }
-    .cloze-input.correct { border-color: #059669; background-color: #064e3b; color: #a7f3d0; }
-    .cloze-input.incorrect { border-color: #dc2626; background-color: #7f1d1d; color: #fecaca; }
-    .cloze-hint { font-size: 0.9em; color: #9ca3af; font-weight: 500; white-space: nowrap; }
+    .cloze-input { width: 140px; padding: 6px 10px; font-size: 16px; border: 1px dashed rgba(0, 216, 255, 0.5); background-color: rgba(2, 10, 20, 0.8); color: #00e5ff; border-radius: 4px; outline: none; transition: 0.3s; text-align: center; }
+    .cloze-input:focus { border: 1px solid #00d8ff; box-shadow: 0 0 12px rgba(0, 216, 255, 0.5); }
+    .cloze-hint { font-size: 0.85em; color: #0284c7; font-weight: bold; white-space: nowrap; font-family: 'Courier New', Courier, monospace; }
 
     /* ========== 悬浮组件 (划词翻译与答疑) ========== */
-    .translation-tooltip { position: fixed; transform: translateX(-50%); background: #1e1e1e; border: 1px solid #444; border-radius: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); width: max-content; max-width: 420px; z-index: 1000; color: #e5e7eb; }
-    .tooltip-header { background: #2c2c2c; padding: 6px 12px; display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: #9ca3af; border-bottom: 1px solid #444; border-radius: 8px 8px 0 0; }
-    .tooltip-close { background: none; border: none; cursor: pointer; font-size: 16px; color: #9ca3af; }
+    .translation-tooltip { position: fixed; transform: translateX(-50%); background: rgba(6, 15, 30, 0.95); backdrop-filter: blur(10px); border: 1px solid #00d8ff; border-radius: 4px; box-shadow: 0 10px 30px rgba(0,0,0,0.8), 0 0 15px rgba(0,216,255,0.2); width: max-content; max-width: 420px; z-index: 1000; color: #e0f2fe; }
+    .tooltip-header { background: rgba(0, 216, 255, 0.1); padding: 6px 12px; display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: #7dd3fc; border-bottom: 1px solid rgba(0, 216, 255, 0.2); }
+    .tooltip-close { background: none; border: none; cursor: pointer; font-size: 16px; color: #00d8ff; }
     .tooltip-content { padding: 12px; font-size: 14px; line-height: 1.6; max-height: 350px; overflow-y: auto; white-space: pre-wrap; }
     
     .floating-container { position: fixed; bottom: 30px; right: 30px; display: flex; flex-direction: column; align-items: flex-end; gap: 16px; z-index: 999; }
-    .floating-ball { width: 56px; height: 56px; border-radius: 50%; background-color: #4f46e5; color: white; border: none; font-size: 24px; cursor: pointer; box-shadow: 0 4px 14px rgba(79, 70, 229, 0.4); display: flex; align-items: center; justify-content: center; }
-    .chat-panel { width: 380px; height: 500px; background: #1e1e1e; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); display: flex; flex-direction: column; border: 1px solid #444; overflow: hidden; }
-    .chat-header { background: #4f46e5; color: white; padding: 14px 16px; font-weight: 600; display: flex; justify-content: space-between; align-items: center; }
-    .chat-messages { flex: 1; padding: 16px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; background-color: #121212; }
+    .floating-ball { width: 56px; height: 56px; border-radius: 50%; background: linear-gradient(135deg, #0077b6, #00d8ff); color: white; border: 1px solid #00e5ff; font-size: 24px; cursor: pointer; box-shadow: 0 0 20px rgba(0, 216, 255, 0.5); display: flex; align-items: center; justify-content: center; transition: 0.3s; }
+    .floating-ball:hover { box-shadow: 0 0 30px #00d8ff; transform: scale(1.05); }
+    
+    .chat-panel { width: 380px; height: 500px; background: rgba(6, 15, 30, 0.95); backdrop-filter: blur(15px); border-radius: 8px; box-shadow: 0 10px 30px rgba(0,0,0,0.8), 0 0 15px rgba(0,216,255,0.2); display: flex; flex-direction: column; border: 1px solid #00d8ff; overflow: hidden; }
+    .chat-header { background: linear-gradient(135deg, #0077b6, #00b4d8); color: white; padding: 14px 16px; font-weight: 600; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #00d8ff; text-shadow: 0 0 4px rgba(255,255,255,0.5); }
+    .chat-messages { flex: 1; padding: 16px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; background-color: rgba(2, 8, 16, 0.6); }
     .chat-message { display: flex; max-width: 85%; }
     .chat-message.user { align-self: flex-end; }
     .chat-message.assistant { align-self: flex-start; }
-    .message-content { padding: 10px 14px; border-radius: 8px; font-size: 14px; line-height: 1.5; white-space: pre-wrap; word-break: break-word; }
-    .user .message-content { background-color: #4f46e5; color: white; border-bottom-right-radius: 0; }
-    .assistant .message-content { background-color: #2c2c2c; border: 1px solid #444; border-bottom-left-radius: 0; color: #e5e7eb; }
-    .chat-footer { padding: 12px; border-top: 1px solid #333; display: flex; gap: 8px; background: #1e1e1e; }
-    .chat-footer input { flex: 1; }
+    .message-content { padding: 10px 14px; border-radius: 6px; font-size: 14px; line-height: 1.5; white-space: pre-wrap; word-break: break-word; }
+    .user .message-content { background: linear-gradient(135deg, #0077b6, #00b4d8); color: white; border-bottom-right-radius: 0; box-shadow: 0 2px 10px rgba(0,180,216,0.3); }
+    .assistant .message-content { background-color: rgba(10, 25, 45, 0.8); border: 1px solid rgba(0, 216, 255, 0.2); border-bottom-left-radius: 0; color: #e0f2fe; }
+    .chat-footer { padding: 12px; border-top: 1px solid rgba(0, 216, 255, 0.2); display: flex; gap: 8px; background: rgba(6, 15, 30, 0.95); }
+    .chat-footer input { flex: 1; background: #020813; border: 1px solid rgba(0,216,255,0.3); color: #fff; }
 
     /* ================= 移动端响应式适配 ================= */
     @media (max-width: 768px) {
       .app-container { flex-direction: column; }
       .mobile-header { display: flex; }
       .mobile-close-btn { display: block; }
-      
-      /* 左侧边栏变为抽屉式滑出 */
+
       .sidebar {
         position: absolute; top: 0; left: 0; transform: translateX(-100%);
         width: 85vw; min-width: 280px; max-width: 400px;
       }
       .sidebar.open { transform: translateX(0); }
       
-      /* 缩小主区域的内边距 */
       .main-content { padding: 20px 15px; }
       
-      /* 调整堆叠布局 */
       .flex-row { flex-direction: column; gap: 10px; }
       .flex-row > div, .flex-row > input, .flex-row > button { width: 100% !important; }
       
@@ -155,7 +214,6 @@
       
       .article-card, .quiz-card, .vocab-practice-card { padding: 20px; margin-bottom: 16px; }
       
-      /* 悬浮组件在移动端的大小及位置重置 */
       .translation-tooltip { 
         width: 90vw !important; max-width: none !important; 
         left: 5vw !important; transform: none !important; 
@@ -165,23 +223,22 @@
       .floating-container { bottom: 20px; right: 20px; }
       .floating-ball { width: 50px; height: 50px; font-size: 20px; }
       
-      /* 听写测试区换行自适应 */
       .vocab-row { flex-direction: column; align-items: flex-start; gap: 8px; }
       .vocab-zh { font-size: 15px; }
       .vocab-de-input { width: 100%; }
-      .status-icon { align-self: flex-end; margin-top: -45px; } /* 移动端勾叉位置微调 */
+      .status-icon { align-self: flex-end; margin-top: -45px; }
     }
   </style>
 </head>
 <body>
 
 <div id="app" class="app-container">
-  
+
   <div class="sidebar-overlay" :class="{ show: isSidebarOpen }" @click="isSidebarOpen = false"></div>
 
   <aside class="sidebar" :class="{ open: isSidebarOpen }">
     <div class="sidebar-header">
-       <h2>DE-Reader Builder</h2>
+       <h2>DE-Reader</h2>
        <button class="mobile-close-btn" @click="isSidebarOpen = false">&times;</button>
     </div>
     
@@ -219,11 +276,11 @@
       </button>
       <button @click="startVocabPractice" class="btn-secondary" style="margin-top: 8px;">🧠 开启背单词测试</button>
 
-      <div class="label-text" style="margin-top: 12px; border-top: 1px dashed #444; padding-top: 12px;">自动生成阅读理解题：</div>
+      <div class="label-text" style="margin-top: 12px; border-top: 1px dashed rgba(0,216,255,0.3); padding-top: 12px;">自动生成阅读理解题：</div>
       <div class="flex-row" style="align-items: center;">
          <input type="number" v-model.number="settings.questionCount" min="1" max="10" placeholder="题目数量" style="width: 80px;" />
          <button @click="generateQuestions" class="btn-secondary" :disabled="!articleResult || isGeneratingQuestions" style="flex: 1;">
-             {{ isGeneratingQuestions ? '生成中...' : '📝 出题' }}
+             {{ isGeneratingQuestions ? '解析中...' : '📝 自动出题' }}
          </button>
       </div>
       <button @click="generateCloze" class="btn-secondary" :disabled="!articleResult || isGeneratingCloze" style="margin-top: 8px; width: 100%;">
@@ -239,7 +296,7 @@
       </div>
       
       <div v-if="dictResult || isDictLoading" class="dict-result-box">
-        <div v-if="isDictLoading" style="color: #818cf8;">正在查阅词典...</div>
+        <div v-if="isDictLoading" style="color: #00d8ff; text-shadow: 0 0 5px #00d8ff;">正在查阅词典...</div>
         <div v-else>
           <div v-html="formattedDictResult"></div>
           <button @click="addDictWordToVocab" class="btn-primary" style="width: 100%; margin-top: 10px; padding: 6px;">➕ 提取原形并加入生词本</button>
@@ -262,14 +319,23 @@
         </div>
       </div>
     </div>
+    
+    <!-- 作者署名卡片 -->
+    <div class="cyber-badge">
+       <span class="badge-title">Author</span>
+       <div style="margin-bottom: 4px;">作者：hxx</div>
+       <div>GitHub 主页：<br><a href="https://github.com/VodkaCranberry" target="_blank">https://github.com/VodkaCranberry</a></div>
+    </div>
+
   </aside>
 
   <main class="main-content">
     
     <div class="mobile-header">
         <button class="menu-btn" @click="isSidebarOpen = true">☰</button>
-        <h1 style="font-size: 18px; color: #818cf8; margin: 0; text-align: center; flex: 1;">DE-Reader</h1>
-        <div style="width: 24px;"></div> </div>
+        <h1 style="font-size: 16px; color: #00d8ff; margin: 0; text-align: center; flex: 1; font-family: 'Courier New', Courier, monospace; text-shadow: 0 0 5px #00d8ff;">DE-Reader</h1>
+        <div style="width: 24px;"></div> 
+    </div>
 
     <div class="view-tabs">
         <button class="view-tab" :class="{active: currentView === 'article'}" @click="currentView = 'article'">📖 文章与题目</button>
@@ -281,10 +347,10 @@
         <div v-if="articleResult" class="article-card">
           <div class="article-body" v-html="formattedArticle" @mouseup="handleSelection" @touchend="handleSelection"></div>
         </div>
-        <div v-else style="color: #6b7280; margin-top: 100px; text-align: center;">在左侧生成文章后，将在此处显示。</div>
+        <div v-else style="color: #475569; margin-top: 100px; text-align: center;">在左侧生成文章后，将在此处显示。</div>
 
         <div v-if="quizQuestions.length > 0" class="quiz-card" @mouseup="handleSelection" @touchend="handleSelection">
-            <h3 style="margin-top: 0; color: #818cf8;">阅读理解 (Leseverstehen)</h3>
+            <h3 style="margin-top: 0; color: #00d8ff; text-shadow: 0 0 8px rgba(0,216,255,0.5);">阅读理解 (Leseverstehen)</h3>
             <div v-for="(q, i) in quizQuestions" :key="i" class="quiz-item">
                 <p><strong>{{ i+1 }}. {{ q.question }}</strong></p>
                 <div class="quiz-options">
@@ -293,10 +359,10 @@
                         {{ opt }}
                     </label>
                 </div>
-                <div v-if="q.showResult" class="result-box" :style="{ backgroundColor: q.userAnswer === q.answer ? '#064e3b' : '#7f1d1d' }">
-                    <p v-if="q.userAnswer === q.answer" style="color: #a7f3d0; font-weight: bold;">✅ 回答正确</p>
-                    <p v-else style="color: #fecaca; font-weight: bold;">❌ 回答错误。正确答案：{{ q.answer }}</p>
-                    <p style="font-size: 14px; margin-top: 8px; color: #d1d5db;"><strong>解析：</strong>{{ q.explanation }}</p>
+                <div v-if="q.showResult" class="result-box" :style="{ backgroundColor: q.userAnswer === q.answer ? 'rgba(0, 255, 157, 0.1)' : 'rgba(255, 0, 60, 0.1)', border: q.userAnswer === q.answer ? '1px solid #00ff9d' : '1px solid #ff003c' }">
+                    <p v-if="q.userAnswer === q.answer" style="color: #00ff9d; font-weight: bold; text-shadow: 0 0 5px #00ff9d;">✅ 回答正确</p>
+                    <p v-else style="color: #ff003c; font-weight: bold; text-shadow: 0 0 5px #ff003c;">❌ 回答错误。正确答案：{{ q.answer }}</p>
+                    <p style="font-size: 14px; margin-top: 8px; color: #bae6fd;"><strong>解析：</strong>{{ q.explanation }}</p>
                 </div>
             </div>
             <button @click="submitQuiz" class="btn-primary" style="width: 100%;" v-if="!quizQuestions[0].showResult">提交答案并查看解析</button>
@@ -306,12 +372,12 @@
 
     <div v-if="currentView === 'cloze'" style="width: 100%; display: flex; flex-direction: column; align-items: center;">
         <div class="vocab-practice-card cloze-container">
-            <h2 style="margin-top: 0; color: #818cf8;">🕳️ 完形填空特训 (Lückentext)</h2>
-            <p v-if="isGeneratingCloze" style="color: #818cf8;">AI 正在智能挖空中，请稍候...</p>
-            <p v-else-if="clozeParts.length === 0" style="color: #6b7280;">请在左侧点击“抽取原文生成完形填空”。</p>
+            <h2 style="margin-top: 0; color: #00d8ff; text-shadow: 0 0 8px rgba(0,216,255,0.5);">🕳️ 完形填空特训 (Lückentext)</h2>
+            <p v-if="isGeneratingCloze" style="color: #00d8ff; text-shadow: 0 0 5px #00d8ff;">AI 正在智能挖空中，请稍候...</p>
+            <p v-else-if="clozeParts.length === 0" style="color: #475569;">请在左侧点击“抽取原文生成完形填空”。</p>
             
             <div v-else>
-                <p style="color: #9ca3af; font-size: 14px; margin-bottom: 24px; line-height: 1.5;">根据上下文和右侧的中文释义，填入正确的德文。系统将实时校验您的拼写与词尾变化。</p>
+                <p style="color: #7dd3fc; font-size: 14px; margin-bottom: 24px; line-height: 1.5;">根据上下文和右侧的中文释义，填入正确的德文。系统将实时校验您的拼写与词尾变化。</p>
                 
                 <template v-for="(part, index) in clozeParts" :key="index">
                     <span v-if="part.type === 'text'" v-html="part.content"></span>
@@ -325,7 +391,7 @@
                            autocomplete="off" 
                            spellcheck="false" 
                         />
-                        <span class="cloze-hint">({{ clozeData.blanks[part.index].zh }})</span>
+                        <span class="cloze-hint">[{{ clozeData.blanks[part.index].zh }}]</span>
                     </span>
                 </template>
             </div>
@@ -334,12 +400,12 @@
 
     <div v-if="currentView === 'vocab'" style="width: 100%; display: flex; flex-direction: column; align-items: center;">
         <div class="vocab-practice-card">
-            <h2 style="margin-top: 0; color: #818cf8;">🧠 德语单词听写</h2>
-            <p v-if="isGeneratingVocabTest" style="color: #818cf8;">正在请求 AI 翻译生词本并生成试卷，请稍候...</p>
-            <p v-else-if="vocabPracticeList.length === 0" style="color: #6b7280;">请在左侧输入你想复习的单词后点击“开启背单词测试”。</p>
+            <h2 style="margin-top: 0; color: #00d8ff; text-shadow: 0 0 8px rgba(0,216,255,0.5);">🧠 德语单词听写</h2>
+            <p v-if="isGeneratingVocabTest" style="color: #00d8ff; text-shadow: 0 0 5px #00d8ff;">正在请求 AI 翻译生词本并生成试卷，请稍候...</p>
+            <p v-else-if="vocabPracticeList.length === 0" style="color: #475569;">请在左侧输入你想复习的单词后点击“开启背单词测试”。</p>
             
             <div v-else>
-                <p style="color: #9ca3af; font-size: 14px; margin-bottom: 24px;">根据中文释义，输入德文单词。无需回车，拼写正确将自动变绿。</p>
+                <p style="color: #7dd3fc; font-size: 14px; margin-bottom: 24px;">根据中文释义，输入德文单词。拼写正确将自动变绿。</p>
                 <div v-for="(item, index) in vocabPracticeList" :key="index" class="vocab-row">
                     <div class="vocab-zh">{{ item.zh }}</div>
                     <input 
@@ -352,8 +418,8 @@
                        spellcheck="false" 
                     />
                     <div class="status-icon">
-                        <span v-if="item.status === 'correct'">✅</span>
-                        <span v-if="item.status === 'incorrect' && item.userInput.length > 0">❌</span>
+                        <span v-if="item.status === 'correct'" style="color: #00ff9d;">✅</span>
+                        <span v-if="item.status === 'incorrect' && item.userInput.length > 0" style="color: #ff003c;">❌</span>
                     </div>
                 </div>
             </div>
@@ -367,11 +433,11 @@
       <button class="tooltip-close" @click="closeTooltip">&times;</button>
     </div>
     <div class="tooltip-content">
-      <div v-if="tooltip.isLoading && !tooltip.translation" style="color: #818cf8;">AI 正在飞速翻译...</div>
+      <div v-if="tooltip.isLoading && !tooltip.translation" style="color: #00d8ff; text-shadow: 0 0 5px #00d8ff;">AI 正在飞速翻译...</div>
       <div v-else class="tooltip-text" v-html="formattedTooltip"></div>
     </div>
     <div class="tooltip-footer" v-if="!tooltip.isLoading && tooltip.translation && isSingleWord(tooltip.text)">
-      <button @click="addTooltipWordToVocab" class="btn-primary" style="padding: 8px 12px; font-size: 14px; width: 100%; border-radius: 0 0 8px 8px;">加入生词本 (提取原形)</button>
+      <button @click="addTooltipWordToVocab" class="btn-primary" style="padding: 8px 12px; font-size: 14px; width: 100%; border-radius: 0 0 3px 3px; border-top: none;">加入生词本 (提取原形)</button>
     </div>
   </div>
 
@@ -379,7 +445,7 @@
     <div v-if="isChatOpen" class="chat-panel">
       <div class="chat-header">
         <span>德语 AI 助手</span>
-        <button @click="isChatOpen = false" style="background:none;border:none;color:white;font-size:24px;cursor:pointer;line-height:1;">&times;</button>
+        <button @click="isChatOpen = false" style="background:none;border:none;color:white;font-size:24px;cursor:pointer;line-height:1; text-shadow: 0 0 5px white;">&times;</button>
       </div>
       <div class="chat-messages" ref="chatScrollRef">
         <div v-for="(msg, index) in chatHistory" :key="index" :class="['chat-message', msg.role]">
@@ -391,7 +457,7 @@
         <button @click="sendChatMessage" :disabled="isChatLoading" class="btn-primary" style="padding:8px 16px;">发送</button>
       </div>
     </div>
-    <button @click="isChatOpen = !isChatOpen" class="floating-ball" title="随时向 AI 提问">
+    <button @click="isChatOpen = !isChatOpen" class="floating-ball" title="向 AI 提问">
       <span v-if="!isChatOpen">💬</span><span v-else style="font-size:28px;line-height:1;">&times;</span>
     </button>
   </div>
@@ -402,7 +468,7 @@
 
   createApp({
     setup() {
-      const isSidebarOpen = ref(false); // 响应式侧边栏状态控制
+      const isSidebarOpen = ref(false); 
       const currentView = ref('article'); 
 
       const config = reactive({ baseUrl: 'https://api.deepseek.com/v1', apiKey: '' });
@@ -466,27 +532,41 @@
       const formattedArticle = computed(() => {
         if (!articleResult.value) return '';
         let html = articleResult.value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\n/g, '<br>');
-        html = html.replace(/\*\*\s*(.*?)\s*\|\s*(.*?)\s*\*\*/g, '<strong style="color: #818cf8;">$1</strong>');
-        html = html.replace(/\*\*(.*?)\*\*/g, '<strong style="color: #818cf8;">$1</strong>');
+        html = html.replace(/\*\*\s*(.*?)\s*\|\s*(.*?)\s*\*\*/g, '<strong style="color: #00d8ff; text-shadow: 0 0 5px rgba(0,216,255,0.4); border-bottom: 1px dashed rgba(0,216,255,0.5);">$1</strong>');
+        html = html.replace(/\*\*(.*?)\*\*/g, '<strong style="color: #00d8ff; text-shadow: 0 0 5px rgba(0,216,255,0.4); border-bottom: 1px dashed rgba(0,216,255,0.5);">$1</strong>');
         return html;
       });
 
+      // 核心改动：支持安全的划词染色处理
+      function applyGenderColors(text) {
+          if (!text) return '';
+          let html = text;
+          // 第一步：预留定制XML标签，避免被转移符替换
+          html = html.replace(/<M>(.*?)<\/M>/gi, '###M###$1###END###');
+          html = html.replace(/<F>(.*?)<\/F>/gi, '###F###$1###END###');
+          html = html.replace(/<N>(.*?)<\/N>/gi, '###N###$1###END###');
+          
+          // 第二步：安全的文本转义
+          html = html.replace(/\[BASE:.*?\]\s*/gi, '');
+          html = html.replace(/(标签|标记|格式|原形|注意)\s*--[>\&gt;]?\s*/gi, '');
+          html = html.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\n/g, '<br>');
+          
+          // 第三步：将占位符转换为带有颜色的样式 (阳性蓝、阴性红、中性绿)
+          html = html.replace(/###M###(.*?)###END###/g, '<span style="color:#60a5fa; font-weight:bold;">$1</span>');
+          html = html.replace(/###F###(.*?)###END###/g, '<span style="color:#f87171; font-weight:bold;">$1</span>');
+          html = html.replace(/###N###(.*?)###END###/g, '<span style="color:#4ade80; font-weight:bold;">$1</span>');
+          
+          // 第四步：解析 Markdown 粗体
+          html = html.replace(/\*\*(.*?)\*\*/g, '<strong style="color: #00d8ff; text-shadow: 0 0 4px rgba(0,216,255,0.4);">$1</strong>');
+          return html;
+      }
+
       const formattedTooltip = computed(() => {
-        if (!tooltip.translation) return '';
-        let html = tooltip.translation;
-        html = html.replace(/\[BASE:.*?\]\s*/gi, '');
-        html = html.replace(/(标签|标记|格式|原形|注意)\s*--[>\&gt;]?\s*/gi, '');
-        html = html.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\n/g, '<br>');
-        html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-        return html;
+        return applyGenderColors(tooltip.translation);
       });
 
       const formattedDictResult = computed(() => {
-        if (!dictResult.value) return '';
-        let html = dictResult.value;
-        html = html.replace(/\[BASE:.*?\]\s*/gi, '');
-        html = html.replace(/(标签|标记|格式|原形|注意)\s*--[>\&gt;]?\s*/gi, '');
-        return html;
+        return applyGenderColors(dictResult.value);
       });
 
       function extractBaseWord(text, fallbackText) {
@@ -530,7 +610,7 @@
           if (onDone) onDone();
         } catch (error) {
           if (error.name === 'AbortError') return;
-          alert(`请求出错: ${error.message}`);
+          alert(`网络请求异常: ${error.message}`);
           if (onDone) onDone();
         }
       }
@@ -550,7 +630,7 @@
           let cleaned = content.replace(/```json/gi, '').replace(/```/g, '').trim();
           return JSON.parse(cleaned);
         } catch (error) {
-          alert(`AI 格式返回错误或网络异常: ${error.message}\n请重新点击生成。`);
+          alert(`数据返回错误: ${error.message}\n请重试。`);
           return null;
         } finally {
           loadingRef.value = false;
@@ -561,7 +641,7 @@
       function generateArticleWithWords() {
         const wordList = settings.words.split('\n').map(w => w.trim()).filter(w => w);
         if (wordList.length === 0) return alert('请至少输入一个单词。');
-        articleResult.value = ''; quizQuestions.value = []; clozeParts.value = []; isGeneratingArticle.value = true; currentView.value = 'article'; isSidebarOpen.value = false; // 生成时在手机上自动收起侧边栏
+        articleResult.value = ''; quizQuestions.value = []; clozeParts.value = []; isGeneratingArticle.value = true; currentView.value = 'article'; isSidebarOpen.value = false; 
         const systemPrompt = `你是一位德语教师。请根据单词列表生成德语阅读文章。要求：1. 难度 ${settings.level} 等级，字数约 ${settings.wordCount} 词。2. 必须包含文中单词并严格使用格式 \`**德文单词**\` 高亮。`;
         fetchAIStream(
           [{ role: 'system', content: systemPrompt }, { role: 'user', content: `开始生成，必须包含：\n${wordList.join('\n')}` }],
@@ -647,7 +727,7 @@ JSON 结构必须是：
               while ((match = regex.exec(result.text)) !== null) {
                   if (match.index > lastIndex) {
                       let textContent = result.text.substring(lastIndex, match.index).replace(/\n/g, '<br>');
-                      textContent = textContent.replace(/\*\*(.*?)\*\*/g, '<strong style="color:#818cf8;">$1</strong>');
+                      textContent = textContent.replace(/\*\*(.*?)\*\*/g, '<strong style="color:#00d8ff; text-shadow: 0 0 5px rgba(0,216,255,0.4);">$1</strong>');
                       parts.push({ type: 'text', content: textContent });
                   }
                   parts.push({ type: 'blank', index: parseInt(match[1]) });
@@ -655,7 +735,7 @@ JSON 结构必须是：
               }
               if (lastIndex < result.text.length) {
                   let textContent = result.text.substring(lastIndex).replace(/\n/g, '<br>');
-                  textContent = textContent.replace(/\*\*(.*?)\*\*/g, '<strong style="color:#818cf8;">$1</strong>');
+                  textContent = textContent.replace(/\*\*(.*?)\*\*/g, '<strong style="color:#00d8ff; text-shadow: 0 0 5px rgba(0,216,255,0.4);">$1</strong>');
                   parts.push({ type: 'text', content: textContent });
               }
               clozeParts.value = parts;
@@ -678,7 +758,7 @@ JSON 结构必须是：
       // ================= 背单词 =================
       async function startVocabPractice() {
         const inputWords = settings.words.split('\n').map(w => w.trim()).filter(w => w);
-        if (inputWords.length === 0) return alert('请先在上方输入框中填入你想复习的德文单词。');
+        if (inputWords.length === 0) return alert('请先在上方填入你想复习的德文单词。');
         
         currentView.value = 'vocab'; isSidebarOpen.value = false;
         vocabPracticeList.value = [];
@@ -722,11 +802,15 @@ JSON 结构必须是：
         
         const systemPrompt = `你是一个专业的德语词典。请查询用户输入的单词："${word}"。
 要求：
-1. 必须在返回的最开头指定单词的纯原形（不含任何冠词），严格使用格式：[BASE:单词原形] （例如 [BASE:Entscheidung] 或 [BASE:entscheiden]）。警告：绝对不要输出“标签”或任何前缀废话！
-2. 直接输出以下 HTML 结构：
-<div class="dict-item"><strong>原形：</strong>[原形与词性，名词按性别标色：<span style="color:#60a5fa;">der 名词</span> / <span style="color:#f87171;">die 名词</span> / <span style="color:#4ade80;">das 名词</span>，并明确标出复数形式；动词明确写出过去式、过去分词等特殊变位]</div>
-<div class="dict-item"><strong>解释：</strong>[中文释义]</div>
-<div class="dict-item"><strong>例句：</strong>[德文例句及中文翻译]</div>`;
+1. 必须在返回的最开头指定单词的纯原形（不含任何冠词），严格使用格式：[BASE:单词原形]。警告：绝对不要输出任何前缀废话！
+2. 解释和例句按正常的文本排版。
+3. 【重要提示】凡是在“原形”或“解释”中出现德语名词及其冠词 (der/die/das) 时，必须严格按性别使用以下XML标记包裹它们：
+   阳性包裹：<M>der 名词</M>
+   阴性包裹：<F>die 名词</F>
+   中性包裹：<N>das 名词</N>
+   例如：<F>die Entscheidung</F>
+
+请直接输出包含原形、释义、例句的文本，不要使用Markdown代码块包裹整体。`;
         fetchAIStream([{ role: 'system', content: systemPrompt }], (chunk) => { dictResult.value += chunk; }, () => { isDictLoading.value = false; });
       }
 
@@ -742,7 +826,7 @@ JSON 结构必须是：
       }
 
       function removeVocab(index) { vocabList.value.splice(index, 1); }
-      function clearVocab() { if (confirm("确定要清空所有生词吗？此操作不可恢复。")) vocabList.value = []; }
+      function clearVocab() { if (confirm("确定要清空所有生词吗？此操作不可逆。")) vocabList.value = []; }
       function exportVocab() {
         if (vocabList.value.length === 0) return;
         const textContent = vocabList.value.join('\n');
@@ -755,7 +839,6 @@ JSON 结构必须是：
 
       // ================= 悬浮划词翻译 =================
       function handleSelection(e) {
-        // 防止在输入框内划词触发翻译弹窗
         if (e && e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
         
         setTimeout(() => {
@@ -792,17 +875,22 @@ JSON 结构必须是：
           const sysPrompt = `你是专业的德语老师。翻译用户选中的德文。
 
 如果只有一个单词：
-1. 必须在回复的最开头输出该词的纯原形（不含冠词，用于系统录入生词本），严格使用格式：[BASE:单词原形] （例如 [BASE:entscheiden] 或 [BASE:Mädchen]）。警告：绝对不要在前面加任何废话！
-2. 提供该单词的原形、词性和释义。如果是名词，必须标明冠词 (der/die/das) 和复数形式；如果是动词，必须指出特殊变位。
+1. 必须在回复的最开头输出该词的纯原形（不含冠词，用于系统录入生词本），严格使用格式：[BASE:单词原形]。
+2. 提供该单词的原形、词性和释义。
 3. 造一个简短的德语例句，并提供中文翻译。
 
 如果是多个单词（词组或句子）：
-请按以下三个部分清晰排版：
-【整体翻译】给出准确的中文意思。
-【结构分析】分析句子语法结构和成分（如主谓宾、从句、框形结构等）。
+请按以下三个部分排版：
+【整体翻译】准确的中文意思。
+【结构分析】分析句子语法结构。
 【逐词解析】拆解并分别列出每个单词的德语原形、词性及中文意思。
 
-排版要清晰易读，重点词汇可以使用 **加粗**。`;
+【格式高亮要求】：
+无论一个单词还是长句，只要在解析和释义中给出了德语名词及其冠词 (der/die/das)，就必须严格按性别使用以下XML标记包裹它们：
+- 阳性：<M>der 名词</M>
+- 阴性：<F>die 名词</F>
+- 中性：<N>das 名词</N>
+例如：<M>der Tisch</M>`;
 
           fetchAIStream(
             [{ role: 'system', content: sysPrompt }, { role: 'user', content: text }],
