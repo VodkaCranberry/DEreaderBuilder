@@ -218,6 +218,27 @@
     .view-tab.active { color: #60a5fa; border-bottom-color: #3b82f6; }
     .view-tab:hover:not(.active) { color: #93c5fd; }
 
+    /* ========== 空白页/欢迎页卡片样式 ========== */
+    .welcome-card {
+      width: 100%; max-width: 800px;
+      background: rgba(30, 41, 59, 0.6); backdrop-filter: blur(8px);
+      padding: 40px; border-radius: 12px; margin-top: 20px;
+      border: 1px dashed rgba(59, 130, 246, 0.4);
+      display: flex; flex-direction: column; align-items: center; text-align: center;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    }
+    .welcome-icon { font-size: 48px; margin-bottom: 12px; text-shadow: 0 0 15px rgba(59,130,246,0.3); }
+    .welcome-title { margin: 0 0 8px 0; color: #60a5fa; font-family: 'Courier New', Courier, monospace; letter-spacing: 1px; font-size: 26px; }
+    .welcome-subtitle { color: #93c5fd; font-size: 15px; margin: 0 0 30px 0; opacity: 0.9; }
+    .feature-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; width: 100%; text-align: left; }
+    .feature-item { display: flex; align-items: flex-start; gap: 14px; padding: 16px; background: rgba(15, 23, 42, 0.5); border-radius: 8px; border: 1px solid rgba(59, 130, 246, 0.15); transition: 0.3s; }
+    .feature-item:hover { border-color: #3b82f6; background: rgba(15, 23, 42, 0.8); transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
+    .f-icon { font-size: 22px; margin-top: 2px; }
+    .f-text strong { display: block; color: #93c5fd; font-size: 15px; margin-bottom: 4px; }
+    .f-text span { color: #64748b; font-size: 13px; line-height: 1.5; display: block; }
+    .welcome-tip { margin-top: 35px; color: #34d399; font-weight: bold; font-size: 14px; animation: pulseTip 2.5s infinite; }
+    @keyframes pulseTip { 0% { opacity: 0.6; } 50% { opacity: 1; } 100% { opacity: 0.6; } }
+
     .article-card, .quiz-card, .vocab-practice-card {
       width: 100%; max-width: 800px; 
       background: rgba(30, 41, 59, 0.85); backdrop-filter: blur(8px);
@@ -491,7 +512,46 @@
         <div v-if="articleResult" class="article-card">
           <div class="article-body" v-html="formattedArticle" @mouseup="handleSelection" @touchend="handleSelection"></div>
         </div>
-        <div v-else style="color: #64748b; margin-top: 100px; text-align: center;">在左侧生成或翻译文章后，将在此处显示。</div>
+        
+        <!-- ========== 优化的 Dashboard 欢迎面板 ========== -->
+        <div v-else class="welcome-card">
+            <div class="welcome-icon">🌊</div>
+            <h2 class="welcome-title">Willkommen bei DE-Reader</h2>
+            <p class="welcome-subtitle">你的专属德语沉浸式学习工作站</p>
+            
+            <div class="feature-grid">
+                <div class="feature-item">
+                    <span class="f-icon">🎯</span>
+                    <div class="f-text">
+                        <strong>分级定制阅读</strong>
+                        <span>支持 A1-C2 难度，根据提示词或单词本一键生成专属德语文章。</span>
+                    </div>
+                </div>
+                <div class="feature-item">
+                    <span class="f-icon">🌍</span>
+                    <div class="f-text">
+                        <strong>任意语言转译</strong>
+                        <span>将各种语言转换为指定难度的德文，并附带重点词汇高亮与全文翻译。</span>
+                    </div>
+                </div>
+                <div class="feature-item">
+                    <span class="f-icon">🗣️</span>
+                    <div class="f-text">
+                        <strong>情景对话特训</strong>
+                        <span>与 AI 外教进行实战口语对话，获取逐句纠错与详细的评估报告。</span>
+                    </div>
+                </div>
+                <div class="feature-item">
+                    <span class="f-icon">🧠</span>
+                    <div class="f-text">
+                        <strong>阅读与词汇巩固</strong>
+                        <span>智能划词查词、完形填空、阅读理解，一站式打造背单词闭环。</span>
+                    </div>
+                </div>
+            </div>
+            
+            <p class="welcome-tip">👉 请展开左侧面板，选择功能开始学习吧！</p>
+        </div>
 
         <div v-if="quizQuestions.length > 0" class="quiz-card" @mouseup="handleSelection" @touchend="handleSelection">
             <h3 style="margin-top: 0; color: #60a5fa;">阅读理解 (Leseverstehen)</h3>
@@ -993,12 +1053,10 @@
           );
       }
 
-      // 核心修复点：强制 AI 脱离外教角色扮演，单纯对之前的聊天记录进行总结报告。
       function endConversation() {
           if (isConvLoading.value || conversationHistory.value.length === 0) return;
           isConvLoading.value = true;
           
-          // 将聊天记录转换为纯文本，避免 AI 继续角色扮演
           const chatLog = conversationHistory.value.map(m => `${m.role === 'user' ? '学生发言' : '外教发言'}: ${m.content}`).join('\n');
           
           const sysPrompt = `你现在是一位客观、专业的德语口语评估专家。请脱离刚才的情景角色，根据以下的完整对话记录，专门针对【学生】的所有发言内容给出一份复盘评估报告。
@@ -1012,7 +1070,6 @@ ${chatLog}
 2. **需要注意的错误/表达**：（请以“你的这次对话练习存在几处错误/需要注意的地方：”为开头）明确提取出学生在整个对话中犯的语法错误，或者不够地道的生硬表达，并必须给出正确的修改示范。如果完全没有错误也请明确指出。
 3. **改进方向**：（请以“改进方向：”为开头）为学生提供以后的学习建议和需要强化的知识点。`;
           
-          // 传入全新的身份设定和文本对话记录，彻底阻断它对过往上下文“继续接话”的可能性
           fetchAIStream(
             [{ role: 'system', content: '你是专业的德语口语评估专家，绝不进行对话扮演，只输出评估报告。' }, { role: 'user', content: sysPrompt }],
             (chunk) => { convReport.value += chunk; },
