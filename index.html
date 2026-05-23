@@ -218,16 +218,6 @@
     .view-tab.active { color: #60a5fa; border-bottom-color: #3b82f6; }
     .view-tab:hover:not(.active) { color: #93c5fd; }
 
-    /* ========== 悬浮与温和渐变特效 ========== */
-    @keyframes floatEmoji {
-      0%, 100% { transform: translateY(0); }
-      50% { transform: translateY(-8px); }
-    }
-    @keyframes softShine {
-      0% { background-position: 0% 50%; }
-      100% { background-position: 200% 50%; }
-    }
-
     /* ========== 空白页/欢迎页卡片样式 ========== */
     .welcome-card {
       width: 100%; max-width: 800px;
@@ -237,8 +227,7 @@
       display: flex; flex-direction: column; align-items: center; text-align: center;
       box-shadow: 0 10px 30px rgba(0,0,0,0.2);
     }
-    /* 为海浪图标加上悬浮动画 */
-    .welcome-icon { font-size: 48px; margin-bottom: 12px; animation: floatEmoji 3s ease-in-out infinite; display: inline-block; }
+    .welcome-icon { font-size: 48px; margin-bottom: 12px; text-shadow: 0 0 15px rgba(59,130,246,0.3); }
     .welcome-title { margin: 0 0 8px 0; color: #60a5fa; font-family: 'Courier New', Courier, monospace; letter-spacing: 1px; font-size: 26px; }
     .welcome-subtitle { color: #93c5fd; font-size: 15px; margin: 0 0 30px 0; opacity: 0.9; }
     .feature-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; width: 100%; text-align: left; }
@@ -247,7 +236,7 @@
     .f-icon { font-size: 22px; margin-top: 2px; }
     .f-text strong { display: block; color: #93c5fd; font-size: 15px; margin-bottom: 4px; }
     .f-text span { color: #64748b; font-size: 13px; line-height: 1.5; display: block; }
-    
+
     .welcome-tip { 
       margin-top: 35px; 
       font-weight: bold; 
@@ -259,6 +248,7 @@
       -webkit-text-fill-color: transparent;
       animation: softShine 3s linear infinite; 
     }
+    @keyframes pulseTip { 0% { opacity: 0.6; } 50% { opacity: 1; } 100% { opacity: 0.6; } }
 
     .article-card, .quiz-card, .vocab-practice-card {
       width: 100%; max-width: 800px; 
@@ -517,7 +507,7 @@
     <!-- 全局状态栏 -->
     <div class="mobile-header">
         <button class="menu-btn" @click="isSidebarOpen = !isSidebarOpen">☰</button>
-        <h1 style="font-size: 16px; margin: 0; text-align: center; flex: 1; font-family: 'Courier New', Courier, monospace;">DE-Reader</h1>
+        <h1 style="font-size: 16px; color: #60a5fa; margin: 0; text-align: center; flex: 1; font-family: 'Courier New', Courier, monospace;">DE-Reader</h1>
         <div style="width: 24px;"></div> 
     </div>
 
@@ -602,15 +592,17 @@
             <p v-else-if="clozeParts.length === 0" style="color: #64748b;">请在左侧点击“抽取原文生成完形填空”。</p>
             
             <div v-else>
-                <p style="color: #93c5fd; font-size: 14px; margin-bottom: 24px; line-height: 1.5;">根据上下文和右侧的中文释义，填入正确的德文。系统将实时校验您的拼写与词尾变化。</p>
+                <p style="color: #93c5fd; font-size: 14px; margin-bottom: 24px; line-height: 1.5;">根据上下文和右侧的中文释义，填入正确的德文。系统将实时校验您的拼写与词尾变化。<br><span style="color: #60a5fa;">💡 提示：在输入框内按下回车键（Enter）可直接显示正确答案。</span></p>
                 
                 <template v-for="(part, index) in clozeParts" :key="index">
                     <span v-if="part.type === 'text'" v-html="part.content"></span>
                     <span v-else-if="part.type === 'blank'" class="cloze-input-wrapper">
+                        <!-- 添加 @keyup.enter="showClozeAnswer(part.index)" -->
                         <input 
                            type="text"
                            v-model="clozeData.blanks[part.index].userInput" 
-                           @input="checkCloze(part.index)" 
+                           @input="checkCloze(part.index)"
+                           @keyup.enter="showClozeAnswer(part.index)" 
                            class="cloze-input" 
                            :class="clozeData.blanks[part.index].status" 
                            autocomplete="off" 
@@ -630,7 +622,7 @@
             <p v-else-if="vocabPracticeList.length === 0" style="color: #64748b;">请在左侧打开“基于单词库生成”功能，输入生词后点击“开启背单词测试”。</p>
             
             <div v-else>
-                <p style="color: #93c5fd; font-size: 14px; margin-bottom: 24px;">根据中文释义，输入德文单词。拼写正确将自动变绿。</p>
+                <p style="color: #93c5fd; font-size: 14px; margin-bottom: 24px;">根据中文释义，输入德文单词（如果是名词请务必带上定冠词 der/die/das）。拼写正确将自动变绿。</p>
                 <div v-for="(item, index) in vocabPracticeList" :key="index" class="vocab-row">
                     <div class="vocab-zh" style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
                         <span style="margin-right: 8px;">{{ item.zh }}</span>
@@ -1192,6 +1184,13 @@ JSON 结构必须是：
           }
       }
 
+      // 新增完形填空回车显示答案逻辑
+      function showClozeAnswer(index) {
+          const blank = clozeData.value.blanks[index];
+          blank.userInput = blank.answer;
+          checkCloze(index);
+      }
+
       async function startVocabPractice() {
         const inputWords = settings.words.split('\n').map(w => w.trim()).filter(w => w);
         if (inputWords.length === 0) return alert('请先在上方填入你想复习的德文单词。');
@@ -1201,9 +1200,10 @@ JSON 结构必须是：
         
         const prompt = `请将以下德语单词翻译成中文。
 要求：严格返回 JSON 数组格式，绝不能包含 Markdown 标记、\`\`\`json 符号或任何额外文字！必须严格按照给出单词的顺序返回，不可打乱。
+【极其重要】：如果给出的单词是名词，你返回的 "de" 字段必须且只能带有正确的定冠词（der/die/das），例如："der Naturwissenschaftler"！绝对不能只返回名词本身。
 JSON 结构必须是：
 [
-  { "de": "德语原词", "zh": "中文释义" }
+  { "de": "德语原词（名词必须加定冠词）", "zh": "中文释义" }
 ]
 单词列表如下：\n${inputWords.join('\n')}`;
 
@@ -1381,7 +1381,7 @@ JSON 结构必须是：
         genMode, 
         config, settings, articleResult, isGeneratingArticle,
         quizQuestions, isGeneratingQuestions, generateQuestions, submitQuiz,
-        clozeData, clozeParts, isGeneratingCloze, generateCloze, checkCloze,
+        clozeData, clozeParts, isGeneratingCloze, generateCloze, checkCloze, showClozeAnswer,
         dictInput, dictResult, isDictLoading, vocabList, lookupWord, addDictWordToVocab, removeVocab, clearVocab, exportVocab, addTooltipWordToVocab, isSingleWord,
         vocabPracticeList, isGeneratingVocabTest, startVocabPractice, checkVocab, showVocabAnswer,
         tooltip, handleSelection, closeTooltip, formattedTooltip, formattedDictResult,
