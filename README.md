@@ -1,6 +1,7 @@
 # 🇩🇪 德语阅读生成器与 AI 助教 (DE-Reader Builder)
 
 一个单文件、纯前端、由大语言模型强力驱动的德语沉浸式学习工作站。从定制阅读、划词翻译到考点特训、单词默写，再到**情景口语对练与多语言转译**，为您打造保姆级的德语学习闭环。
+### 直达链接：https://vodkacranberry.github.io/DEreaderBuilder/
 
 ---
 
