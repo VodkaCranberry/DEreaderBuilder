@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>德语阅读生成器与AI助教</title>
+  <title>DE-Reader</title>
   <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
   <style>
     /* ========== 全局沉稳深海蓝风格 ========== */
@@ -218,6 +218,16 @@
     .view-tab.active { color: #60a5fa; border-bottom-color: #3b82f6; }
     .view-tab:hover:not(.active) { color: #93c5fd; }
 
+    /* ========== 悬浮与温和渐变特效 ========== */
+    @keyframes floatEmoji {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-8px); }
+    }
+    @keyframes softShine {
+      0% { background-position: 0% 50%; }
+      100% { background-position: 200% 50%; }
+    }
+
     /* ========== 空白页/欢迎页卡片样式 ========== */
     .welcome-card {
       width: 100%; max-width: 800px;
@@ -227,7 +237,8 @@
       display: flex; flex-direction: column; align-items: center; text-align: center;
       box-shadow: 0 10px 30px rgba(0,0,0,0.2);
     }
-    .welcome-icon { font-size: 48px; margin-bottom: 12px; text-shadow: 0 0 15px rgba(59,130,246,0.3); }
+    /* 为海浪图标加上悬浮动画 */
+    .welcome-icon { font-size: 48px; margin-bottom: 12px; animation: floatEmoji 3s ease-in-out infinite; display: inline-block; }
     .welcome-title { margin: 0 0 8px 0; color: #60a5fa; font-family: 'Courier New', Courier, monospace; letter-spacing: 1px; font-size: 26px; }
     .welcome-subtitle { color: #93c5fd; font-size: 15px; margin: 0 0 30px 0; opacity: 0.9; }
     .feature-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; width: 100%; text-align: left; }
@@ -236,8 +247,18 @@
     .f-icon { font-size: 22px; margin-top: 2px; }
     .f-text strong { display: block; color: #93c5fd; font-size: 15px; margin-bottom: 4px; }
     .f-text span { color: #64748b; font-size: 13px; line-height: 1.5; display: block; }
-    .welcome-tip { margin-top: 35px; color: #a2c5ee; font-weight: bold; font-size: 14px; animation: pulseTip 2.5s infinite; }
-    @keyframes pulseTip { 0% { opacity: 0.6; } 50% { opacity: 1; } 100% { opacity: 0.6; } }
+    
+    .welcome-tip { 
+      margin-top: 35px; 
+      font-weight: bold; 
+      font-size: 14px; 
+      /* 温和的深蓝到浅蓝渐变 */
+      background: linear-gradient(90deg, #60a5fa, #bfdbfe, #60a5fa);
+      background-size: 200% auto;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: softShine 3s linear infinite; 
+    }
 
     .article-card, .quiz-card, .vocab-practice-card {
       width: 100%; max-width: 800px; 
@@ -496,7 +517,7 @@
     <!-- 全局状态栏 -->
     <div class="mobile-header">
         <button class="menu-btn" @click="isSidebarOpen = !isSidebarOpen">☰</button>
-        <h1 style="font-size: 16px; color: #60a5fa; margin: 0; text-align: center; flex: 1; font-family: 'Courier New', Courier, monospace;">DE-Reader</h1>
+        <h1 style="font-size: 16px; margin: 0; text-align: center; flex: 1; font-family: 'Courier New', Courier, monospace;">DE-Reader</h1>
         <div style="width: 24px;"></div> 
     </div>
 
@@ -1373,3 +1394,4 @@ JSON 结构必须是：
 </script>
 </body>
 </html>
+--- END OF FILE ---
