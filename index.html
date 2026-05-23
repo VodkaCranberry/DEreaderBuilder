@@ -218,6 +218,16 @@
     .view-tab.active { color: #60a5fa; border-bottom-color: #3b82f6; }
     .view-tab:hover:not(.active) { color: #93c5fd; }
 
+    /* ========== 悬浮与温和渐变特效 ========== */
+    @keyframes floatEmoji {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-8px); }
+    }
+    @keyframes softShine {
+      0% { background-position: 0% 50%; }
+      100% { background-position: 200% 50%; }
+    }
+
     /* ========== 空白页/欢迎页卡片样式 ========== */
     .welcome-card {
       width: 100%; max-width: 800px;
@@ -227,7 +237,8 @@
       display: flex; flex-direction: column; align-items: center; text-align: center;
       box-shadow: 0 10px 30px rgba(0,0,0,0.2);
     }
-    .welcome-icon { font-size: 48px; margin-bottom: 12px; text-shadow: 0 0 15px rgba(59,130,246,0.3); }
+    /* 为海浪图标加上悬浮动画 */
+    .welcome-icon { font-size: 48px; margin-bottom: 12px; animation: floatEmoji 3s ease-in-out infinite; display: inline-block; }
     .welcome-title { margin: 0 0 8px 0; color: #60a5fa; font-family: 'Courier New', Courier, monospace; letter-spacing: 1px; font-size: 26px; }
     .welcome-subtitle { color: #93c5fd; font-size: 15px; margin: 0 0 30px 0; opacity: 0.9; }
     .feature-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; width: 100%; text-align: left; }
@@ -236,7 +247,7 @@
     .f-icon { font-size: 22px; margin-top: 2px; }
     .f-text strong { display: block; color: #93c5fd; font-size: 15px; margin-bottom: 4px; }
     .f-text span { color: #64748b; font-size: 13px; line-height: 1.5; display: block; }
-
+    
     .welcome-tip { 
       margin-top: 35px; 
       font-weight: bold; 
@@ -507,7 +518,7 @@
     <!-- 全局状态栏 -->
     <div class="mobile-header">
         <button class="menu-btn" @click="isSidebarOpen = !isSidebarOpen">☰</button>
-        <h1 style="font-size: 16px; color: #60a5fa; margin: 0; text-align: center; flex: 1; font-family: 'Courier New', Courier, monospace;">DE-Reader</h1>
+        <h1 style="font-size: 16px; margin: 0; text-align: center; flex: 1; font-family: 'Courier New', Courier, monospace; color: #60a5fa;">DE-Reader</h1>
         <div style="width: 24px;"></div> 
     </div>
 
@@ -592,23 +603,22 @@
             <p v-else-if="clozeParts.length === 0" style="color: #64748b;">请在左侧点击“抽取原文生成完形填空”。</p>
             
             <div v-else>
-                <p style="color: #93c5fd; font-size: 14px; margin-bottom: 24px; line-height: 1.5;">根据上下文和右侧的中文释义，填入正确的德文。系统将实时校验您的拼写与词尾变化。<br><span style="color: #60a5fa;">💡 提示：在输入框内按下回车键（Enter）可直接显示正确答案。</span></p>
+                <p style="color: #93c5fd; font-size: 14px; margin-bottom: 24px; line-height: 1.5;">根据上下文和右侧的中文释义，填入正确的德文。系统将实时校验您的拼写与词尾变化。</p>
                 
                 <template v-for="(part, index) in clozeParts" :key="index">
                     <span v-if="part.type === 'text'" v-html="part.content"></span>
                     <span v-else-if="part.type === 'blank'" class="cloze-input-wrapper">
-                        <!-- 添加 @keyup.enter="showClozeAnswer(part.index)" -->
                         <input 
                            type="text"
                            v-model="clozeData.blanks[part.index].userInput" 
                            @input="checkCloze(part.index)"
-                           @keyup.enter="showClozeAnswer(part.index)" 
                            class="cloze-input" 
                            :class="clozeData.blanks[part.index].status" 
                            autocomplete="off" 
                            spellcheck="false" 
                         />
                         <span class="cloze-hint">[{{ clozeData.blanks[part.index].zh }}]</span>
+                        <button @click="showClozeAnswer(part.index)" class="btn-secondary" style="padding: 4px 8px; font-size: 12px; margin-left: 4px; line-height: 1;" title="显示答案">💡</button>
                     </span>
                 </template>
             </div>
@@ -1184,7 +1194,6 @@ JSON 结构必须是：
           }
       }
 
-      // 新增完形填空回车显示答案逻辑
       function showClozeAnswer(index) {
           const blank = clozeData.value.blanks[index];
           blank.userInput = blank.answer;
