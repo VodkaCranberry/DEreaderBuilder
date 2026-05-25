@@ -1,260 +1,99 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
-
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>DE-Reader</title>
   <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
   <style>
-    /* ========== 鍏ㄥ眬娌夌ǔ娣辨捣钃濋�庢牸 ========== */
-    * {
-      box-sizing: border-box;
-      transition: background-color 0.3s, border-color 0.3s, box-shadow 0.3s;
-    }
-
-    body {
-      margin: 0;
-      padding: 0;
-      /* 鎻愰珮鐏板害鐨勬繁娴疯摑鐏拌儗鏅� */
-      background-color: #1e293b;
-      background-image:
+    /* ========== 全局沉稳深海蓝风格 ========== */
+    * { box-sizing: border-box; transition: background-color 0.3s, border-color 0.3s, box-shadow 0.3s; }
+    
+    body { 
+      margin: 0; padding: 0; 
+      /* 提高灰度的深海蓝灰背景 */
+      background-color: #1e293b; 
+      background-image: 
         linear-gradient(rgba(148, 163, 184, 0.05) 1px, transparent 1px),
         linear-gradient(90deg, rgba(148, 163, 184, 0.05) 1px, transparent 1px);
       background-size: 30px 30px;
-      font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-      color: #f1f5f9;
+      font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
+      color: #f1f5f9; 
     }
-
-    ::-webkit-scrollbar {
-      width: 8px;
-    }
-
-    ::-webkit-scrollbar-track {
-      background: rgba(0, 0, 0, 0.1);
-    }
-
-    ::-webkit-scrollbar-thumb {
-      background: #475569;
-      border-radius: 4px;
-    }
-
-    ::-webkit-scrollbar-thumb:hover {
-      background: #64748b;
-    }
+    
+    ::-webkit-scrollbar { width: 8px; }
+    ::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.1); }
+    ::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #64748b; }
 
     .app-container {
-      display: flex;
-      flex-direction: row;
-      flex-wrap: nowrap;
-      width: 100vw;
-      height: 100vh;
-      overflow: hidden;
-      position: relative;
+      display: flex; flex-direction: row; flex-wrap: nowrap; 
+      width: 100vw; height: 100vh; overflow: hidden; position: relative;
     }
 
-    /* ========== 澶撮儴涓庨伄缃� (鐜板湪鍏ㄥ眬甯搁┗) ========== */
-    .mobile-header {
-      display: flex;
-      /* 鏀逛负鍏ㄥ眬鍙�瑙� */
-      background: rgba(15, 23, 42, 0.95);
-      backdrop-filter: blur(10px);
-      padding: 12px 20px;
-      align-items: center;
-      justify-content: space-between;
-      border-bottom: 1px solid rgba(59, 130, 246, 0.2);
-      flex-shrink: 0;
-      z-index: 90;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-      /* 璐熻竟璺濅娇鍏跺湪 main-content 涓�閾烘弧 */
-      margin-top: -40px;
-      margin-left: -40px;
-      margin-right: -40px;
-      margin-bottom: 24px;
+    /* ========== 头部与遮罩 (现在全局常驻) ========== */
+    .mobile-header { 
+      display: flex; /* 改为全局可见 */
+      background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(10px); 
+      padding: 12px 20px; align-items: center; justify-content: space-between; 
+      border-bottom: 1px solid rgba(59, 130, 246, 0.2); 
+      flex-shrink: 0; z-index: 90; box-shadow: 0 2px 8px rgba(0,0,0,0.2); 
+      /* 负边距使其在 main-content 中铺满 */
+      margin-top: -40px; margin-left: -40px; margin-right: -40px; margin-bottom: 24px;
       align-self: stretch;
     }
-
-    .menu-btn {
-      background: none;
-      border: none;
-      color: #60a5fa;
-      font-size: 24px;
-      cursor: pointer;
-      padding: 0;
-      line-height: 1;
-    }
-
-    .menu-btn:hover {
-      color: #93c5fd;
-    }
-
-    .sidebar-overlay {
-      display: none;
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: rgba(0, 0, 0, 0.6);
-      z-index: 100;
-      backdrop-filter: blur(3px);
-      opacity: 0;
-      transition: opacity 0.3s;
-      pointer-events: none;
-    }
-
+    .menu-btn { background: none; border: none; color: #60a5fa; font-size: 24px; cursor: pointer; padding: 0; line-height: 1; }
+    .menu-btn:hover { color: #93c5fd; }
+    
+    .sidebar-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); z-index: 100; backdrop-filter: blur(3px); opacity: 0; transition: opacity 0.3s; pointer-events: none; }
     @media (max-width: 768px) {
-      .sidebar-overlay.show {
-        display: block;
-        opacity: 1;
-        pointer-events: auto;
-      }
-
-      .mobile-header {
-        margin-top: -20px;
-        margin-left: -15px;
-        margin-right: -15px;
-        margin-bottom: 16px;
-      }
+      .sidebar-overlay.show { display: block; opacity: 1; pointer-events: auto; }
+      .mobile-header { margin-top: -20px; margin-left: -15px; margin-right: -15px; margin-bottom: 16px; }
     }
 
-    /* ========== 宸︿晶杈规爮 (鏀�鎸佸叏灞€骞虫粦鏀剁缉) ========== */
+    /* ========== 左侧边栏 (支持全局平滑收缩) ========== */
     .sidebar {
-      width: 400px;
-      min-width: 400px;
-      flex-shrink: 0;
-      background: rgba(15, 23, 42, 0.95);
-      backdrop-filter: blur(15px);
+      width: 400px; min-width: 400px; flex-shrink: 0; 
+      background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(15px);
       border-right: 1px solid rgba(59, 130, 246, 0.2);
-      padding: 24px;
-      display: flex;
-      flex-direction: column;
-      gap: 20px;
-      box-shadow: 2px 0 15px rgba(0, 0, 0, 0.3);
-      height: 100%;
-      overflow-y: auto;
-      z-index: 101;
+      padding: 24px; display: flex; flex-direction: column; gap: 20px;
+      box-shadow: 2px 0 15px rgba(0, 0, 0, 0.3); height: 100%; overflow-y: auto;
+      z-index: 101; 
       transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
-
-    /* 妗岄潰绔�鏀剁缉鐘舵€� */
-    .sidebar.closed {
-      margin-left: -400px;
-    }
-
-    /* 绉诲姩绔�瑕嗙洊鏍峰紡 */
+    
+    /* 桌面端收缩状态 */
+    .sidebar.closed { margin-left: -400px; }
+    
+    /* 移动端覆盖样式 */
     @media (max-width: 768px) {
       .sidebar {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 85vw;
-        min-width: 280px;
-        max-width: 400px;
+        position: absolute; top: 0; left: 0; 
+        width: 85vw; min-width: 280px; max-width: 400px;
       }
-
-      .sidebar.closed {
-        margin-left: 0;
-        transform: translateX(-100%);
-      }
-
-      .sidebar.open {
-        margin-left: 0;
-        transform: translateX(0);
-      }
+      .sidebar.closed { margin-left: 0; transform: translateX(-100%); }
+      .sidebar.open { margin-left: 0; transform: translateX(0); }
     }
-
-    .sidebar-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .sidebar-header h2 {
-      margin: 0;
-      font-size: 22px;
-      color: #60a5fa;
-      font-family: 'Courier New', Courier, monospace;
-      letter-spacing: 1px;
-    }
-
-    .mobile-close-btn {
-      display: none;
-      background: none;
-      border: none;
-      color: #60a5fa;
-      font-size: 28px;
-      cursor: pointer;
-      padding: 0;
-      line-height: 1;
-    }
-
-    @media (max-width: 768px) {
-      .mobile-close-btn {
-        display: block;
-      }
-    }
-
-    .config-section,
-    .input-section,
-    .vocab-section {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-    }
-
-    .sidebar h3 {
-      margin: 0;
-      font-size: 14px;
-      color: #93c5fd;
-      border-bottom: 1px dashed rgba(96, 165, 250, 0.3);
-      padding-bottom: 6px;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      font-family: 'Courier New', Courier, monospace;
-    }
-
-    input[type="text"],
-    input[type="number"],
-    input[type="password"],
-    select,
-    textarea {
-      width: 100%;
-      padding: 10px;
-      border: 1px solid rgba(148, 163, 184, 0.3);
-      border-radius: 4px;
-      font-size: 14px;
-      background-color: rgba(30, 41, 59, 0.8);
-      color: #f8fafc;
-      transition: 0.3s;
-      resize: vertical;
+    
+    .sidebar-header { display: flex; justify-content: space-between; align-items: center; }
+    .sidebar-header h2 { margin: 0; font-size: 22px; color: #60a5fa; font-family: 'Courier New', Courier, monospace; letter-spacing: 1px; }
+    .mobile-close-btn { display: none; background: none; border: none; color: #60a5fa; font-size: 28px; cursor: pointer; padding: 0; line-height: 1; }
+    @media (max-width: 768px) { .mobile-close-btn { display: block; } }
+    
+    .config-section, .input-section, .vocab-section { display: flex; flex-direction: column; gap: 12px; }
+    .sidebar h3 { margin: 0; font-size: 14px; color: #93c5fd; border-bottom: 1px dashed rgba(96, 165, 250, 0.3); padding-bottom: 6px; text-transform: uppercase; letter-spacing: 1px; font-family: 'Courier New', Courier, monospace; }
+    
+    input[type="text"], input[type="number"], input[type="password"], select, textarea {
+      width: 100%; padding: 10px; border: 1px solid rgba(148, 163, 184, 0.3); border-radius: 4px;
+      font-size: 14px; background-color: rgba(30, 41, 59, 0.8); color: #f8fafc; transition: 0.3s; resize: vertical;
       font-family: inherit;
     }
-
-    input:focus,
-    select:focus,
-    textarea:focus {
-      border-color: #3b82f6;
-      outline: none;
-      box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
-      background-color: rgba(30, 41, 59, 1);
-    }
-
-    input::placeholder,
-    textarea::placeholder {
-      color: #64748b;
-    }
-
-    .label-text {
-      font-size: 13px;
-      color: #93c5fd;
-      font-weight: 500;
-      margin-bottom: 6px;
-      display: block;
-      font-family: 'Courier New', Courier, monospace;
-    }
-
-    /* ========== 鏀剁撼鐩� (Accordion) 璁捐�� ========== */
+    input:focus, select:focus, textarea:focus { border-color: #3b82f6; outline: none; box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2); background-color: rgba(30, 41, 59, 1); }
+    input::placeholder, textarea::placeholder { color: #64748b; }
+    
+    .label-text { font-size: 13px; color: #93c5fd; font-weight: 500; margin-bottom: 6px; display: block; font-family: 'Courier New', Courier, monospace; }
+    
+    /* ========== 收纳盒 (Accordion) 设计 ========== */
     .accordion-container {
       border: 1px solid rgba(59, 130, 246, 0.3);
       border-radius: 6px;
@@ -263,15 +102,12 @@
       display: flex;
       flex-direction: column;
     }
-
     .accordion-item {
       border-bottom: 1px solid rgba(59, 130, 246, 0.2);
     }
-
     .accordion-item:last-child {
       border-bottom: none;
     }
-
     .accordion-header {
       padding: 12px 14px;
       cursor: pointer;
@@ -284,191 +120,71 @@
       font-weight: 600;
       transition: 0.3s;
     }
-
     .accordion-header:hover {
       background: rgba(59, 130, 246, 0.15);
       color: #60a5fa;
     }
-
     .accordion-item.open .accordion-header {
       background: rgba(37, 99, 235, 0.2);
       color: #60a5fa;
       border-bottom: 1px dashed rgba(59, 130, 246, 0.3);
     }
-
     .accordion-body {
       padding: 16px 14px;
       background: rgba(15, 23, 42, 0.8);
       display: none;
     }
-
     .accordion-item.open .accordion-body {
       display: flex;
       flex-direction: column;
       gap: 12px;
     }
-
     .accordion-arrow {
       transition: transform 0.3s;
       font-size: 12px;
     }
-
     .accordion-item.open .accordion-arrow {
       transform: rotate(180deg);
     }
 
-    /* ========== 鎸夐挳鏍峰紡 (娌夌ǔ娣辨捣钃�) ========== */
-    .btn-primary {
-      background: linear-gradient(135deg, #1e40af, #2563eb);
-      color: white;
-      border: 1px solid #3b82f6;
-      padding: 10px;
-      border-radius: 4px;
-      font-weight: bold;
-      cursor: pointer;
-      transition: 0.3s;
+    /* ========== 按钮样式 (沉稳深海蓝) ========== */
+    .btn-primary { 
+      background: linear-gradient(135deg, #1e40af, #2563eb); color: white; 
+      border: 1px solid #3b82f6; padding: 10px; border-radius: 4px; 
+      font-weight: bold; cursor: pointer; transition: 0.3s; 
       letter-spacing: 1px;
       box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
     }
-
-    .btn-primary:hover {
-      background: linear-gradient(135deg, #2563eb, #1e40af);
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+    .btn-primary:hover { background: linear-gradient(135deg, #2563eb, #1e40af); box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3); }
+    .btn-primary:disabled { background: #1e293b; border-color: #334155; color: #64748b; box-shadow: none; cursor: not-allowed; }
+    
+    .btn-secondary { 
+      background: rgba(59, 130, 246, 0.1); color: #60a5fa; 
+      border: 1px solid rgba(59, 130, 246, 0.4); padding: 10px; border-radius: 4px; 
+      font-weight: 600; cursor: pointer; transition: 0.3s; 
     }
+    .btn-secondary:hover { background: rgba(59, 130, 246, 0.2); border-color: #60a5fa; }
+    .btn-secondary:disabled { color: #475569; border-color: #334155; background: transparent; cursor: not-allowed; }
 
-    .btn-primary:disabled {
-      background: #1e293b;
-      border-color: #334155;
-      color: #64748b;
-      box-shadow: none;
-      cursor: not-allowed;
-    }
+    .flex-row { display: flex; gap: 12px; align-items: flex-start; }
+    .flex-row input, .flex-row select { flex: 1; }
+    
+    /* ========== 生词本及作者标签 ========== */
+    .dict-result-box { background: rgba(30, 41, 59, 0.9); border: 1px solid rgba(59, 130, 246, 0.2); border-radius: 4px; padding: 12px; font-size: 14px; line-height: 1.6; max-height: 300px; overflow-y: auto; }
+    .dict-item { margin-bottom: 8px; }
+    .vocab-list-container { display: flex; flex-direction: column; gap: 8px; max-height: 250px; overflow-y: auto; padding: 4px 0; }
+    .vocab-list-item { display: flex; justify-content: space-between; align-items: center; background: rgba(30, 41, 59, 0.9); border: 1px solid rgba(59, 130, 246, 0.15); padding: 8px 12px; border-radius: 4px; font-size: 14px; transition: 0.3s; }
+    .vocab-list-item:hover { border-color: #3b82f6; }
+    .vocab-list-item-text { font-weight: bold; color: #93c5fd; word-break: break-all; margin-right: 10px; }
+    .vocab-header { display: flex; justify-content: space-between; align-items: center; }
+    .vocab-header h4 { margin: 0; font-size: 14px; color: #93c5fd; }
+    .vocab-actions { display: flex; gap: 12px; }
+    .btn-text { background: none; border: none; color: #60a5fa; cursor: pointer; font-size: 13px; padding: 0; transition: 0.3s; }
+    .btn-text:hover { color: #93c5fd; }
+    .btn-text.danger { color: #f87171; font-size: 16px; font-weight: bold; padding: 0 4px; }
+    .btn-text.danger:hover { color: #fca5a5; }
 
-    .btn-secondary {
-      background: rgba(59, 130, 246, 0.1);
-      color: #60a5fa;
-      border: 1px solid rgba(59, 130, 246, 0.4);
-      padding: 10px;
-      border-radius: 4px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: 0.3s;
-    }
-
-    .btn-secondary:hover {
-      background: rgba(59, 130, 246, 0.2);
-      border-color: #60a5fa;
-    }
-
-    .btn-secondary:disabled {
-      color: #475569;
-      border-color: #334155;
-      background: transparent;
-      cursor: not-allowed;
-    }
-
-    .flex-row {
-      display: flex;
-      gap: 12px;
-      align-items: flex-start;
-    }
-
-    .flex-row input,
-    .flex-row select {
-      flex: 1;
-    }
-
-    /* ========== 鐢熻瘝鏈�鍙婁綔鑰呮爣绛� ========== */
-    .dict-result-box {
-      background: rgba(30, 41, 59, 0.9);
-      border: 1px solid rgba(59, 130, 246, 0.2);
-      border-radius: 4px;
-      padding: 12px;
-      font-size: 14px;
-      line-height: 1.6;
-      max-height: 300px;
-      overflow-y: auto;
-    }
-
-    .dict-item {
-      margin-bottom: 8px;
-    }
-
-    .vocab-list-container {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      max-height: 250px;
-      overflow-y: auto;
-      padding: 4px 0;
-    }
-
-    .vocab-list-item {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      background: rgba(30, 41, 59, 0.9);
-      border: 1px solid rgba(59, 130, 246, 0.15);
-      padding: 8px 12px;
-      border-radius: 4px;
-      font-size: 14px;
-      transition: 0.3s;
-    }
-
-    .vocab-list-item:hover {
-      border-color: #3b82f6;
-    }
-
-    .vocab-list-item-text {
-      font-weight: bold;
-      color: #93c5fd;
-      word-break: break-all;
-      margin-right: 10px;
-    }
-
-    .vocab-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .vocab-header h4 {
-      margin: 0;
-      font-size: 14px;
-      color: #93c5fd;
-    }
-
-    .vocab-actions {
-      display: flex;
-      gap: 12px;
-    }
-
-    .btn-text {
-      background: none;
-      border: none;
-      color: #60a5fa;
-      cursor: pointer;
-      font-size: 13px;
-      padding: 0;
-      transition: 0.3s;
-    }
-
-    .btn-text:hover {
-      color: #93c5fd;
-    }
-
-    .btn-text.danger {
-      color: #f87171;
-      font-size: 16px;
-      font-weight: bold;
-      padding: 0 4px;
-    }
-
-    .btn-text.danger:hover {
-      color: #fca5a5;
-    }
-
-    /* 浣滆€呬笓灞炶韩浠界墝 */
+    /* 作者专属身份牌 */
     .cyber-badge {
       margin-top: 20px;
       padding: 16px 12px 12px 12px;
@@ -480,1715 +196,1219 @@
       color: #93c5fd;
       position: relative;
     }
-
     .badge-title {
-      position: absolute;
-      top: -10px;
-      left: 10px;
-      background: #0f172a;
-      padding: 0 6px;
-      color: #60a5fa;
-      font-weight: bold;
-      font-size: 11px;
-      border: 1px solid rgba(59, 130, 246, 0.3);
-      border-radius: 2px;
+      position: absolute; top: -10px; left: 10px; background: #0f172a; padding: 0 6px;
+      color: #60a5fa; font-weight: bold; font-size: 11px;
+      border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 2px;
     }
+    .cyber-badge a { color: #60a5fa; text-decoration: none; transition: 0.3s; }
+    .cyber-badge a:hover { color: #93c5fd; }
 
-    .cyber-badge a {
-      color: #60a5fa;
-      text-decoration: none;
-      transition: 0.3s;
-    }
-
-    .cyber-badge a:hover {
-      color: #93c5fd;
-    }
-
-    /* ========== 鍙充晶涓诲唴瀹瑰尯 ========== */
+    /* ========== 右侧主内容区 ========== */
     .main-content {
-      flex-grow: 1;
-      flex-shrink: 1;
-      min-width: 0;
-      position: relative;
-      z-index: 10;
-      height: 100%;
-      overflow-y: auto;
-      padding: 40px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
+      flex-grow: 1; flex-shrink: 1; min-width: 0; position: relative; z-index: 10;
+      height: 100%; overflow-y: auto; padding: 40px; display: flex; flex-direction: column; align-items: center;
     }
-
-    .view-tabs {
-      display: flex;
-      gap: 16px;
-      margin-bottom: 24px;
-      width: 100%;
-      max-width: 800px;
+    
+    .view-tabs { display: flex; gap: 16px; margin-bottom: 24px; width: 100%; max-width: 800px; }
+    .view-tab { 
+      padding: 10px 20px; font-size: 16px; font-weight: 600; border: none; background: transparent; cursor: pointer; 
+      border-bottom: 2px solid transparent; color: #64748b; transition: 0.3s; flex: 1; text-align: center;
     }
+    .view-tab.active { color: #60a5fa; border-bottom-color: #3b82f6; }
+    .view-tab:hover:not(.active) { color: #93c5fd; }
 
-    .view-tab {
-      padding: 10px 20px;
-      font-size: 16px;
-      font-weight: 600;
-      border: none;
-      background: transparent;
-      cursor: pointer;
-      border-bottom: 2px solid transparent;
-      color: #64748b;
-      transition: 0.3s;
-      flex: 1;
-      text-align: center;
-    }
-
-    .view-tab.active {
-      color: #60a5fa;
-      border-bottom-color: #3b82f6;
-    }
-
-    .view-tab:hover:not(.active) {
-      color: #93c5fd;
-    }
-
-    /* ========== 鎮�娴�涓庢俯鍜屾笎鍙樼壒鏁� ========== */
+    /* ========== 悬浮与温和渐变特效 ========== */
     @keyframes floatEmoji {
-
-      0%,
-      100% {
-        transform: translateY(0);
-      }
-
-      50% {
-        transform: translateY(-8px);
-      }
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-8px); }
     }
-
     @keyframes softShine {
-      0% {
-        background-position: 0% 50%;
-      }
-
-      100% {
-        background-position: 200% 50%;
-      }
+      0% { background-position: 0% 50%; }
+      100% { background-position: 200% 50%; }
     }
 
-    /* ========== 绌虹櫧椤�/娆㈣繋椤靛崱鐗囨牱寮� ========== */
+    /* ========== 空白页/欢迎页卡片样式 ========== */
     .welcome-card {
-      width: 100%;
-      max-width: 800px;
-      background: rgba(30, 41, 59, 0.6);
-      backdrop-filter: blur(8px);
-      padding: 40px;
-      border-radius: 12px;
-      margin-top: 20px;
+      width: 100%; max-width: 800px;
+      background: rgba(30, 41, 59, 0.6); backdrop-filter: blur(8px);
+      padding: 40px; border-radius: 12px; margin-top: 20px;
       border: 1px dashed rgba(59, 130, 246, 0.4);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      text-align: center;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+      display: flex; flex-direction: column; align-items: center; text-align: center;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
     }
-
-    /* 涓烘捣娴�鍥炬爣鍔犱笂鎮�娴�鍔ㄧ敾 */
-    .welcome-icon {
-      font-size: 48px;
-      margin-bottom: 12px;
-      animation: floatEmoji 3s ease-in-out infinite;
-      display: inline-block;
-    }
-
-    .welcome-title {
-      margin: 0 0 8px 0;
-      color: #60a5fa;
-      font-family: 'Courier New', Courier, monospace;
-      letter-spacing: 1px;
-      font-size: 26px;
-    }
-
-    .welcome-subtitle {
-      color: #93c5fd;
-      font-size: 15px;
-      margin: 0 0 30px 0;
-      opacity: 0.9;
-    }
-
-    .feature-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-      gap: 16px;
-      width: 100%;
-      text-align: left;
-    }
-
-    .feature-item {
-      display: flex;
-      align-items: flex-start;
-      gap: 14px;
-      padding: 16px;
-      background: rgba(15, 23, 42, 0.5);
-      border-radius: 8px;
-      border: 1px solid rgba(59, 130, 246, 0.15);
-      transition: 0.3s;
-    }
-
-    .feature-item:hover {
-      border-color: #3b82f6;
-      background: rgba(15, 23, 42, 0.8);
-      transform: translateY(-2px);
-      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-    }
-
-    .f-icon {
-      font-size: 22px;
-      margin-top: 2px;
-    }
-
-    .f-text strong {
-      display: block;
-      color: #93c5fd;
-      font-size: 15px;
-      margin-bottom: 4px;
-    }
-
-    .f-text span {
-      color: #64748b;
-      font-size: 13px;
-      line-height: 1.5;
-      display: block;
-    }
-
-    .welcome-tip {
-      margin-top: 35px;
-      font-weight: bold;
-      font-size: 14px;
-      /* 娓╁拰鐨勬繁钃濆埌娴呰摑娓愬彉 */
+    /* 为海浪图标加上悬浮动画 */
+    .welcome-icon { font-size: 48px; margin-bottom: 12px; animation: floatEmoji 3s ease-in-out infinite; display: inline-block; }
+    .welcome-title { margin: 0 0 8px 0; color: #60a5fa; font-family: 'Courier New', Courier, monospace; letter-spacing: 1px; font-size: 26px; }
+    .welcome-subtitle { color: #93c5fd; font-size: 15px; margin: 0 0 30px 0; opacity: 0.9; }
+    .feature-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; width: 100%; text-align: left; }
+    .feature-item { display: flex; align-items: flex-start; gap: 14px; padding: 16px; background: rgba(15, 23, 42, 0.5); border-radius: 8px; border: 1px solid rgba(59, 130, 246, 0.15); transition: 0.3s; }
+    .feature-item:hover { border-color: #3b82f6; background: rgba(15, 23, 42, 0.8); transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
+    .f-icon { font-size: 22px; margin-top: 2px; }
+    .f-text strong { display: block; color: #93c5fd; font-size: 15px; margin-bottom: 4px; }
+    .f-text span { color: #64748b; font-size: 13px; line-height: 1.5; display: block; }
+    
+    .welcome-tip { 
+      margin-top: 35px; 
+      font-weight: bold; 
+      font-size: 14px; 
+      /* 温和的深蓝到浅蓝渐变 */
       background: linear-gradient(90deg, #60a5fa, #bfdbfe, #60a5fa);
       background-size: 200% auto;
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
-      animation: softShine 3s linear infinite;
+      animation: softShine 3s linear infinite; 
     }
+    @keyframes pulseTip { 0% { opacity: 0.6; } 50% { opacity: 1; } 100% { opacity: 0.6; } }
 
-    @keyframes pulseTip {
-      0% {
-        opacity: 0.6;
-      }
-
-      50% {
-        opacity: 1;
-      }
-
-      100% {
-        opacity: 0.6;
-      }
-    }
-
-    .article-card,
-    .quiz-card,
-    .vocab-practice-card {
-      width: 100%;
-      max-width: 800px;
-      background: rgba(30, 41, 59, 0.85);
-      backdrop-filter: blur(8px);
-      padding: 40px;
-      border-radius: 8px;
-      margin-bottom: 24px;
+    .article-card, .quiz-card, .vocab-practice-card {
+      width: 100%; max-width: 800px; 
+      background: rgba(30, 41, 59, 0.85); backdrop-filter: blur(8px);
+      padding: 40px; border-radius: 8px; margin-bottom: 24px;
       border: 1px solid rgba(59, 130, 246, 0.2);
-      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+      box-shadow: 0 10px 25px rgba(0,0,0,0.3);
     }
+    .article-body { font-size: 18px; line-height: 2.0; letter-spacing: 0.5px; word-wrap: break-word; overflow-wrap: break-word; color: #f1f5f9; }
 
-    .article-body {
-      font-size: 18px;
-      line-height: 2.0;
-      letter-spacing: 0.5px;
-      word-wrap: break-word;
-      overflow-wrap: break-word;
-      color: #f1f5f9;
-    }
+    /* ========== 阅读理解题样式 ========== */
+    .quiz-item { margin-bottom: 24px; padding-bottom: 20px; border-bottom: 1px dashed rgba(59, 130, 246, 0.2); }
+    .quiz-options label { display: block; margin: 10px 0; cursor: pointer; font-size: 16px; color: #bae6fd; line-height: 1.4; transition: 0.2s; }
+    .quiz-options label:hover { color: #60a5fa; }
+    .result-box { padding: 12px 16px; border-radius: 4px; margin-top: 12px; border: 1px solid transparent; }
+    .result-box p { margin: 4px 0; }
 
-    /* ========== 闃呰�荤悊瑙ｉ�樻牱寮� ========== */
-    .quiz-item {
-      margin-bottom: 24px;
-      padding-bottom: 20px;
-      border-bottom: 1px dashed rgba(59, 130, 246, 0.2);
-    }
+    /* ========== 背单词与完形测试区样式 ========== */
+    .vocab-row { display: flex; align-items: center; gap: 16px; margin-bottom: 16px; padding: 12px; background: rgba(15, 23, 42, 0.6); border-radius: 4px; border: 1px solid rgba(59, 130, 246, 0.1); }
+    .vocab-zh { flex: 1; font-size: 16px; font-weight: bold; color: #bae6fd;}
+    .vocab-de-input { flex: 1; padding: 10px; font-size: 16px; border: 1px solid rgba(59, 130, 246, 0.3); background-color: #0f172a; border-radius: 4px; outline: none; transition: 0.3s; width: 100%; color: #fff;}
+    
+    .vocab-de-input.correct, .cloze-input.correct { border-color: #34d399 !important; background-color: rgba(52, 211, 153, 0.1) !important; color: #34d399 !important; }
+    .vocab-de-input.incorrect, .cloze-input.incorrect { border-color: #f87171 !important; background-color: rgba(248, 113, 113, 0.1) !important; color: #f87171 !important; }
+    .status-icon { font-size: 20px; width: 24px; text-align: center; }
 
-    .quiz-options label {
-      display: block;
-      margin: 10px 0;
-      cursor: pointer;
-      font-size: 16px;
-      color: #bae6fd;
-      line-height: 1.4;
-      transition: 0.2s;
-    }
+    /* ========== 完形填空区样式 ========== */
+    .cloze-container { line-height: 2.8; font-size: 18px; color: #f1f5f9; }
+    .cloze-input-wrapper { display: inline-flex; align-items: center; gap: 6px; margin: 4px 6px; vertical-align: middle; white-space: normal; }
+    .cloze-input { width: 140px; padding: 6px 10px; font-size: 16px; border: 1px dashed rgba(96, 165, 250, 0.5); background-color: rgba(15, 23, 42, 0.8); color: #93c5fd; border-radius: 4px; outline: none; transition: 0.3s; text-align: center; }
+    .cloze-input:focus { border: 1px solid #3b82f6; box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3); }
+    .cloze-hint { font-size: 0.85em; color: #60a5fa; font-weight: bold; white-space: nowrap; font-family: 'Courier New', Courier, monospace; }
 
-    .quiz-options label:hover {
-      color: #60a5fa;
-    }
+    /* ========== 悬浮组件 (划词翻译与答疑) ========== */
+    .translation-tooltip { position: fixed; transform: translateX(-50%); background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(10px); border: 1px solid #3b82f6; border-radius: 4px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); width: max-content; max-width: 420px; z-index: 1000; color: #f1f5f9; }
+    .tooltip-header { background: rgba(59, 130, 246, 0.15); padding: 6px 12px; display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: #93c5fd; border-bottom: 1px solid rgba(59, 130, 246, 0.3); }
+    .tooltip-close { background: none; border: none; cursor: pointer; font-size: 16px; color: #60a5fa; }
+    .tooltip-content { padding: 12px; font-size: 14px; line-height: 1.6; max-height: 350px; overflow-y: auto; white-space: pre-wrap; }
+    
+    .floating-container { position: fixed; bottom: 30px; right: 30px; display: flex; flex-direction: column; align-items: flex-end; gap: 16px; z-index: 999; }
+    .floating-ball { width: 56px; height: 56px; border-radius: 50%; background: linear-gradient(135deg, #1e40af, #2563eb); color: white; border: 1px solid #60a5fa; font-size: 24px; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center; transition: 0.3s; }
+    .floating-ball:hover { transform: scale(1.05); box-shadow: 0 6px 15px rgba(0,0,0,0.5); }
+    
+    .chat-panel { width: 380px; height: 500px; background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(15px); border-radius: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); display: flex; flex-direction: column; border: 1px solid #3b82f6; overflow: hidden; }
+    .chat-header { background: linear-gradient(135deg, #1e40af, #2563eb); color: white; padding: 14px 16px; font-weight: 600; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #3b82f6; }
+    .chat-messages { flex: 1; padding: 16px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; background-color: rgba(15, 23, 42, 0.6); }
+    .chat-message { display: flex; max-width: 85%; }
+    .chat-message.user { align-self: flex-end; }
+    .chat-message.assistant { align-self: flex-start; }
+    .message-content { padding: 10px 14px; border-radius: 6px; font-size: 14px; line-height: 1.5; white-space: pre-wrap; word-break: break-word; }
+    .user .message-content { background: linear-gradient(135deg, #1e40af, #2563eb); color: white; border-bottom-right-radius: 0; }
+    .assistant .message-content { background-color: rgba(30, 41, 59, 0.9); border: 1px solid rgba(59, 130, 246, 0.2); border-bottom-left-radius: 0; color: #f1f5f9; }
+    .chat-footer { padding: 12px; border-top: 1px solid rgba(59, 130, 246, 0.2); display: flex; flex-direction: column; gap: 8px; background: rgba(15, 23, 42, 0.95); }
+    .chat-footer-row { display: flex; gap: 8px; width: 100%; }
+    .chat-footer-row input { flex: 1; background: #0f172a; border: 1px solid rgba(59, 130, 246, 0.3); color: #fff; }
 
-    .result-box {
-      padding: 12px 16px;
-      border-radius: 4px;
-      margin-top: 12px;
-      border: 1px solid transparent;
-    }
-
-    .result-box p {
-      margin: 4px 0;
-    }
-
-    /* ========== 鑳屽崟璇嶄笌瀹屽舰娴嬭瘯鍖烘牱寮� ========== */
-    .vocab-row {
-      display: flex;
-      align-items: center;
-      gap: 16px;
-      margin-bottom: 16px;
-      padding: 12px;
-      background: rgba(15, 23, 42, 0.6);
-      border-radius: 4px;
-      border: 1px solid rgba(59, 130, 246, 0.1);
-    }
-
-    .vocab-zh {
-      flex: 1;
-      font-size: 16px;
-      font-weight: bold;
-      color: #bae6fd;
-    }
-
-    .vocab-de-input {
-      flex: 1;
-      padding: 10px;
-      font-size: 16px;
-      border: 1px solid rgba(59, 130, 246, 0.3);
-      background-color: #0f172a;
-      border-radius: 4px;
-      outline: none;
-      transition: 0.3s;
-      width: 100%;
-      color: #fff;
-    }
-
-    .vocab-de-input.correct,
-    .cloze-input.correct {
-      border-color: #34d399 !important;
-      background-color: rgba(52, 211, 153, 0.1) !important;
-      color: #34d399 !important;
-    }
-
-    .vocab-de-input.incorrect,
-    .cloze-input.incorrect {
-      border-color: #f87171 !important;
-      background-color: rgba(248, 113, 113, 0.1) !important;
-      color: #f87171 !important;
-    }
-
-    .status-icon {
-      font-size: 20px;
-      width: 24px;
-      text-align: center;
-    }
-
-    /* ========== 瀹屽舰濉�绌哄尯鏍峰紡 ========== */
-    .cloze-container {
-      line-height: 2.8;
-      font-size: 18px;
-      color: #f1f5f9;
-    }
-
-    .cloze-input-wrapper {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      margin: 4px 6px;
-      vertical-align: middle;
-      white-space: normal;
-    }
-
-    .cloze-input {
-      width: 140px;
-      padding: 6px 10px;
-      font-size: 16px;
-      border: 1px dashed rgba(96, 165, 250, 0.5);
-      background-color: rgba(15, 23, 42, 0.8);
-      color: #93c5fd;
-      border-radius: 4px;
-      outline: none;
-      transition: 0.3s;
-      text-align: center;
-    }
-
-    .cloze-input:focus {
-      border: 1px solid #3b82f6;
-      box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
-    }
-
-    .cloze-hint {
-      font-size: 0.85em;
-      color: #60a5fa;
-      font-weight: bold;
-      white-space: nowrap;
-      font-family: 'Courier New', Courier, monospace;
-    }
-
-    /* ========== 鎮�娴�缁勪欢 (鍒掕瘝缈昏瘧涓庣瓟鐤�) ========== */
-    .translation-tooltip {
-      position: fixed;
-      transform: translateX(-50%);
-      background: rgba(15, 23, 42, 0.95);
-      backdrop-filter: blur(10px);
-      border: 1px solid #3b82f6;
-      border-radius: 4px;
-      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
-      width: max-content;
-      max-width: 420px;
-      z-index: 1000;
-      color: #f1f5f9;
-    }
-
-    .tooltip-header {
-      background: rgba(59, 130, 246, 0.15);
-      padding: 6px 12px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      font-size: 12px;
-      color: #93c5fd;
-      border-bottom: 1px solid rgba(59, 130, 246, 0.3);
-    }
-
-    .tooltip-close {
-      background: none;
-      border: none;
-      cursor: pointer;
-      font-size: 16px;
-      color: #60a5fa;
-    }
-
-    .tooltip-content {
-      padding: 12px;
-      font-size: 14px;
-      line-height: 1.6;
-      max-height: 350px;
-      overflow-y: auto;
-      white-space: pre-wrap;
-    }
-
-    .floating-container {
-      position: fixed;
-      bottom: 30px;
-      right: 30px;
-      display: flex;
-      flex-direction: column;
-      align-items: flex-end;
-      gap: 16px;
-      z-index: 999;
-    }
-
-    .floating-ball {
-      width: 56px;
-      height: 56px;
-      border-radius: 50%;
-      background: linear-gradient(135deg, #1e40af, #2563eb);
-      color: white;
-      border: 1px solid #60a5fa;
-      font-size: 24px;
-      cursor: pointer;
-      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: 0.3s;
-    }
-
-    .floating-ball:hover {
-      transform: scale(1.05);
-      box-shadow: 0 6px 15px rgba(0, 0, 0, 0.5);
-    }
-
-    .chat-panel {
-      width: 380px;
-      height: 500px;
-      background: rgba(15, 23, 42, 0.95);
-      backdrop-filter: blur(15px);
-      border-radius: 8px;
-      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
-      display: flex;
-      flex-direction: column;
-      border: 1px solid #3b82f6;
-      overflow: hidden;
-    }
-
-    .chat-header {
-      background: linear-gradient(135deg, #1e40af, #2563eb);
-      color: white;
-      padding: 14px 16px;
-      font-weight: 600;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      border-bottom: 1px solid #3b82f6;
-    }
-
-    .chat-messages {
-      flex: 1;
-      padding: 16px;
-      overflow-y: auto;
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-      background-color: rgba(15, 23, 42, 0.6);
-    }
-
-    .chat-message {
-      display: flex;
-      max-width: 85%;
-    }
-
-    .chat-message.user {
-      align-self: flex-end;
-    }
-
-    .chat-message.assistant {
-      align-self: flex-start;
-    }
-
-    .message-content {
-      padding: 10px 14px;
-      border-radius: 6px;
-      font-size: 14px;
-      line-height: 1.5;
-      white-space: pre-wrap;
-      word-break: break-word;
-    }
-
-    .user .message-content {
-      background: linear-gradient(135deg, #1e40af, #2563eb);
-      color: white;
-      border-bottom-right-radius: 0;
-    }
-
-    .assistant .message-content {
-      background-color: rgba(30, 41, 59, 0.9);
-      border: 1px solid rgba(59, 130, 246, 0.2);
-      border-bottom-left-radius: 0;
-      color: #f1f5f9;
-    }
-
-    .chat-footer {
-      padding: 12px;
-      border-top: 1px solid rgba(59, 130, 246, 0.2);
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      background: rgba(15, 23, 42, 0.95);
-    }
-
-    .chat-footer-row {
-      display: flex;
-      gap: 8px;
-      width: 100%;
-    }
-
-    .chat-footer-row input {
-      flex: 1;
-      background: #0f172a;
-      border: 1px solid rgba(59, 130, 246, 0.3);
-      color: #fff;
-    }
-
-    /* ================= 绉诲姩绔�鍝嶅簲寮忛€傞厤 ================= */
+    /* ================= 移动端响应式适配 ================= */
     @media (max-width: 768px) {
-      .app-container {
-        flex-direction: column;
+      .app-container { flex-direction: column; }
+      .main-content { padding: 20px 15px; }
+      
+      .flex-row { flex-direction: column; gap: 10px; }
+      .flex-row > div, .flex-row > input, .flex-row > button { width: 100% !important; }
+      
+      .view-tabs { gap: 8px; margin-bottom: 16px; }
+      .view-tab { padding: 8px 10px; font-size: 14px; }
+      
+      .article-card, .quiz-card, .vocab-practice-card { padding: 20px; margin-bottom: 16px; }
+      
+      .translation-tooltip { 
+        width: 90vw !important; max-width: none !important; 
+        left: 5vw !important; transform: none !important; 
       }
-
-      .main-content {
-        padding: 20px 15px;
-      }
-
-      .flex-row {
-        flex-direction: column;
-        gap: 10px;
-      }
-
-      .flex-row>div,
-      .flex-row>input,
-      .flex-row>button {
-        width: 100% !important;
-      }
-
-      .view-tabs {
-        gap: 8px;
-        margin-bottom: 16px;
-      }
-
-      .view-tab {
-        padding: 8px 10px;
-        font-size: 14px;
-      }
-
-      .article-card,
-      .quiz-card,
-      .vocab-practice-card {
-        padding: 20px;
-        margin-bottom: 16px;
-      }
-
-      .translation-tooltip {
-        width: 90vw !important;
-        max-width: none !important;
-        left: 5vw !important;
-        transform: none !important;
-      }
-
-      .chat-panel {
-        width: 90vw;
-        height: 60vh;
-        position: fixed;
-        right: 5vw;
-        bottom: 85px;
-      }
-
-      .floating-container {
-        bottom: 20px;
-        right: 20px;
-      }
-
-      .floating-ball {
-        width: 50px;
-        height: 50px;
-        font-size: 20px;
-      }
-
-      .vocab-row {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 8px;
-      }
-
-      .vocab-zh {
-        font-size: 15px;
-      }
-
-      .vocab-de-input {
-        width: 100%;
-      }
-
-      .status-icon {
-        align-self: flex-end;
-        margin-top: -45px;
-      }
+      
+      .chat-panel { width: 90vw; height: 60vh; position: fixed; right: 5vw; bottom: 85px; }
+      .floating-container { bottom: 20px; right: 20px; }
+      .floating-ball { width: 50px; height: 50px; font-size: 20px; }
+      
+      .vocab-row { flex-direction: column; align-items: flex-start; gap: 8px; }
+      .vocab-zh { font-size: 15px; }
+      .vocab-de-input { width: 100%; }
+      .status-icon { align-self: flex-end; margin-top: -45px; }
     }
   </style>
 </head>
-
 <body>
 
-  <div id="app" class="app-container">
+<div id="app" class="app-container">
 
-    <div class="sidebar-overlay" :class="{ show: isSidebarOpen }" @click="isSidebarOpen = false"></div>
+  <div class="sidebar-overlay" :class="{ show: isSidebarOpen }" @click="isSidebarOpen = false"></div>
 
-    <!-- 鏃犺�烘�岄潰杩樻槸绉诲姩绔�锛岄兘鐢� isSidebarOpen 缁熶竴鎺у埗灞曞紑涓庢姌鍙� -->
-    <aside class="sidebar" :class="{ open: isSidebarOpen, closed: !isSidebarOpen }">
-      <div class="sidebar-header">
-        <h2>DE-Reader</h2>
-        <button class="mobile-close-btn" @click="isSidebarOpen = false">&times;</button>
-      </div>
+  <!-- 无论桌面还是移动端，都由 isSidebarOpen 统一控制展开与折叠 -->
+  <aside class="sidebar" :class="{ open: isSidebarOpen, closed: !isSidebarOpen }">
+    <div class="sidebar-header">
+       <h2>DE-Reader</h2>
+       <button class="mobile-close-btn" @click="isSidebarOpen = false">&times;</button>
+    </div>
+    
+    <div class="config-section">
+      <h3>1. API 配置</h3>
+      <input v-model="config.baseUrl" type="text" placeholder="API Base URL" />
+      <input v-model="config.apiKey" type="password" placeholder="输入 API Key" />
+      <!-- 【修改点：新增模型名称配置输入框】 -->
+      <input v-model="config.model" type="text" placeholder="模型名称 (如: deepseek-chat 或 moonshot-v1-8k)" />
+    </div>
 
-      <div class="config-section">
-        <h3>1. API 閰嶇疆</h3>
-        <input v-model="config.baseUrl" type="text" placeholder="API Base URL" />
-        <input v-model="config.apiKey" type="password" placeholder="杈撳叆 API Key" />
-        <!-- 銆愪慨鏀圭偣锛氭柊澧炴ā鍨嬪悕绉伴厤缃�杈撳叆妗嗐€� -->
-        <input v-model="config.model" type="text" placeholder="妯″瀷鍚嶇О (濡�: deepseek-chat 鎴� moonshot-v1-8k)" />
-      </div>
-
-      <!-- 浼樺寲鍚庣殑鏀剁撼鐩掔増闃呰�荤敓鎴愮晫闈� -->
-      <div class="input-section">
-        <h3>2. 闃呰��/瀵硅瘽鐢熸垚</h3>
-
-        <div class="accordion-container">
-
-          <!-- Tab 1: 鏍规嵁鎻愮ず璇嶇敓鎴� -->
-          <div class="accordion-item" :class="{ open: genMode === 'topic' }">
-            <div class="accordion-header" @click="genMode = genMode === 'topic' ? '' : 'topic'">
-              <span>馃挕 鎻愮ず璇�/涓婚�樼敓鎴�</span>
-              <span class="accordion-arrow">鈻�</span>
-            </div>
-            <div class="accordion-body">
-              <div class="flex-row">
-                <div style="flex: 1;">
-                  <span class="label-text">闅惧害绛夌骇</span>
+    <!-- 优化后的收纳盒版阅读生成界面 -->
+    <div class="input-section">
+      <h3>2. 阅读/对话生成</h3>
+      
+      <div class="accordion-container">
+        
+        <!-- Tab 1: 根据提示词生成 -->
+        <div class="accordion-item" :class="{ open: genMode === 'topic' }">
+          <div class="accordion-header" @click="genMode = genMode === 'topic' ? '' : 'topic'">
+            <span>💡 提示词/主题生成</span>
+            <span class="accordion-arrow">▼</span>
+          </div>
+          <div class="accordion-body">
+            <div class="flex-row">
+              <div style="flex: 1;">
+                  <span class="label-text">难度等级</span>
                   <select v-model="settings.level">
-                    <option v-for="lvl in ['A1', 'A2', 'B1', 'B2', 'C1', 'C2']" :key="lvl" :value="lvl">{{ lvl }}
-                    </option>
+                      <option v-for="lvl in ['A1', 'A2', 'B1', 'B2', 'C1', 'C2']" :key="lvl" :value="lvl">{{ lvl }}</option>
                   </select>
-                </div>
-                <div style="flex: 1;">
-                  <span class="label-text">鐩�鏍囪瘝鏁�</span>
-                  <input v-model.number="settings.wordCount" type="number" step="50" min="50" max="2000" />
-                </div>
               </div>
-              <input v-model="settings.topic" type="text" placeholder="杈撳叆浣犳兂闃呰�荤殑涓婚�橈紝濡傦細鏌忔灄澧欑殑鍘嗗彶" />
-              <button :disabled="isGeneratingArticle" @click="generateArticleWithTopic" class="btn-primary">
-                鉁� 鏍规嵁鎻愮ず璇嶇敓鎴� {{ settings.level }} 鏂囩珷
-              </button>
+              <div style="flex: 1;">
+                  <span class="label-text">目标词数</span>
+                  <input v-model.number="settings.wordCount" type="number" step="50" min="50" max="2000" />
+              </div>
             </div>
+            <input v-model="settings.topic" type="text" placeholder="输入你想阅读的主题，如：柏林墙的历史" />
+            <button :disabled="isGeneratingArticle" @click="generateArticleWithTopic" class="btn-primary">
+              ✨ 根据提示词生成 {{ settings.level }} 文章
+            </button>
           </div>
+        </div>
 
-          <!-- Tab 2: 鍩轰簬鍗曡瘝搴撶敓鎴� -->
-          <div class="accordion-item" :class="{ open: genMode === 'words' }">
-            <div class="accordion-header" @click="genMode = genMode === 'words' ? '' : 'words'">
-              <span>馃摎 鍩轰簬鍗曡瘝搴撶敓鎴�</span>
-              <span class="accordion-arrow">鈻�</span>
-            </div>
-            <div class="accordion-body">
-              <div class="flex-row">
-                <div style="flex: 1;">
-                  <span class="label-text">闅惧害绛夌骇</span>
+        <!-- Tab 2: 基于单词库生成 -->
+        <div class="accordion-item" :class="{ open: genMode === 'words' }">
+          <div class="accordion-header" @click="genMode = genMode === 'words' ? '' : 'words'">
+            <span>📚 基于单词库生成</span>
+            <span class="accordion-arrow">▼</span>
+          </div>
+          <div class="accordion-body">
+            <div class="flex-row">
+              <div style="flex: 1;">
+                  <span class="label-text">难度等级</span>
                   <select v-model="settings.level">
-                    <option v-for="lvl in ['A1', 'A2', 'B1', 'B2', 'C1', 'C2']" :key="lvl" :value="lvl">{{ lvl }}
-                    </option>
+                      <option v-for="lvl in ['A1', 'A2', 'B1', 'B2', 'C1', 'C2']" :key="lvl" :value="lvl">{{ lvl }}</option>
                   </select>
-                </div>
-                <div style="flex: 1;">
-                  <span class="label-text">鐩�鏍囪瘝鏁�</span>
+              </div>
+              <div style="flex: 1;">
+                  <span class="label-text">目标词数</span>
                   <input v-model.number="settings.wordCount" type="number" step="50" min="50" max="2000" />
-                </div>
               </div>
-              <textarea v-model="settings.words" placeholder="杈撳叆浣犳兂澶嶄範鐨勫痉鏂囷紙姣忚�屼竴涓�锛�" rows="3"></textarea>
-              <button :disabled="isGeneratingArticle" @click="generateArticleWithWords" class="btn-primary">
-                {{ isGeneratingArticle ? '姝ｅ湪鐢熸垚...' : '鍩轰簬鍗曡瘝鐢熸垚鏂囩珷' }}
-              </button>
-              <button @click="startVocabPractice" class="btn-secondary">馃�� 寮€鍚�鑳屽崟璇嶆祴璇�</button>
             </div>
-          </div>
-
-          <!-- Tab 3: 浠绘剰璇�瑷€杞�寰疯�� (浼樺寲鐗�) -->
-          <div class="accordion-item" :class="{ open: genMode === 'translate' }">
-            <div class="accordion-header" @click="genMode = genMode === 'translate' ? '' : 'translate'">
-              <span>馃實 浠绘剰璇�瑷€杞�寰疯��</span>
-              <span class="accordion-arrow">鈻�</span>
-            </div>
-            <div class="accordion-body">
-              <div>
-                <span class="label-text">鐩�鏍囧痉璇�闅惧害 (鑷�鍔ㄨ皟鏁村彞鍨嬭瘝姹�)</span>
-                <select v-model="settings.translateLevel">
-                  <option value="鍘熸枃鐩存帴缈昏瘧">鍘熸枃鐩存帴缈昏瘧</option>
-                  <option v-for="lvl in ['A1', 'A2', 'B1', 'B2', 'C1', 'C2']" :key="lvl" :value="lvl">{{ lvl }} 闅惧害鏀瑰啓
-                  </option>
-                </select>
-              </div>
-              <textarea v-model="settings.translateContent" placeholder="绮樿创浣犻渶瑕佽浆鎹㈢殑浠绘剰璇�瑷€娈佃惤..." rows="4"></textarea>
-              <button :disabled="isGeneratingArticle" @click="generateTranslatedArticle" class="btn-primary">
-                馃攧 鏅鸿兘杞�鎹㈠苟鐢熸垚寰疯��鏂囩珷
-              </button>
-            </div>
-          </div>
-
-          <!-- Tab 4: 鍦烘櫙瀵硅瘽缁冧範 -->
-          <div class="accordion-item" :class="{ open: genMode === 'conversation' }">
-            <div class="accordion-header" @click="genMode = genMode === 'conversation' ? '' : 'conversation'">
-              <span>馃棧锔� 鍦烘櫙瀵硅瘽缁冧範</span>
-              <span class="accordion-arrow">鈻�</span>
-            </div>
-            <div class="accordion-body">
-              <input v-model="settings.convTopic" type="text" placeholder="杈撳叆浣犳兂鑱婄殑涓婚�� (鐣欑┖鍒橝I闅忔満)" />
-              <button :disabled="isConvLoading" @click="startConversation" class="btn-primary">
-                馃殌 寮€鍚�瀵硅瘽缁冧範
-              </button>
-            </div>
-          </div>
-
-        </div>
-
-        <div class="label-text"
-          style="margin-top: 12px; border-top: 1px dashed rgba(96,165,250,0.3); padding-top: 12px;">鏂囩珷璇惧悗缁冧範鐢熸垚锛�</div>
-        <div class="flex-row" style="align-items: center;">
-          <input type="number" v-model.number="settings.questionCount" min="1" max="10" placeholder="棰樼洰鏁伴噺"
-            style="width: 80px;" />
-          <button @click="generateQuestions" class="btn-secondary" :disabled="!articleResult || isGeneratingQuestions"
-            style="flex: 1;">
-            {{ isGeneratingQuestions ? '瑙ｆ瀽涓�...' : '馃摑 鑷�鍔ㄥ嚭闃呰�婚��' }}
-          </button>
-        </div>
-        <button @click="generateCloze" class="btn-secondary" :disabled="!articleResult || isGeneratingCloze"
-          style="margin-top: 8px; width: 100%;">
-          {{ isGeneratingCloze ? '姝ｅ湪鏅鸿兘鎸栫┖...' : '馃暢锔� 鎶藉彇鍘熸枃鐢熸垚瀹屽舰濉�绌�' }}
-        </button>
-      </div>
-
-      <div class="vocab-section">
-        <h3>3. 鏌ヨ瘝涓庣敓璇嶆湰</h3>
-        <div class="flex-row" style="align-items: center;">
-          <input v-model="dictInput" @keyup.enter="lookupWord" type="text" placeholder="杈撳叆涓嶈�よ瘑鐨勫崟璇�..." />
-          <button @click="lookupWord" class="btn-secondary" :disabled="isDictLoading">鏌ヨ��</button>
-        </div>
-
-        <div v-if="dictResult || isDictLoading" class="dict-result-box">
-          <div v-if="isDictLoading" style="color: #60a5fa;">姝ｅ湪鏌ラ槄璇嶅吀...</div>
-          <div v-else>
-            <div v-html="formattedDictResult"></div>
-            <button @click="addDictWordToVocab" class="btn-primary"
-              style="width: 100%; margin-top: 10px; padding: 6px;">鉃� 鎻愬彇鍘熷舰骞跺姞鍏ョ敓璇嶆湰</button>
+            <textarea v-model="settings.words" placeholder="输入你想复习的德文（每行一个）" rows="3"></textarea>
+            <button :disabled="isGeneratingArticle" @click="generateArticleWithWords" class="btn-primary">
+              {{ isGeneratingArticle ? '正在生成...' : '基于单词生成文章' }}
+            </button>
+            <button @click="startVocabPractice" class="btn-secondary">🧠 开启背单词测试</button>
           </div>
         </div>
 
-        <div v-if="vocabList.length > 0">
-          <div class="vocab-header">
-            <h4>鎴戠殑鐢熻瘝鏈� ({{ vocabList.length }})</h4>
-            <div class="vocab-actions">
-              <button @click="clearVocab" class="btn-text danger">馃棏锔� 娓呯┖</button>
-              <button @click="exportVocab" class="btn-text">馃摜 瀵煎嚭</button>
-            </div>
+        <!-- Tab 3: 任意语言转德语 (优化版) -->
+        <div class="accordion-item" :class="{ open: genMode === 'translate' }">
+          <div class="accordion-header" @click="genMode = genMode === 'translate' ? '' : 'translate'">
+            <span>🌍 任意语言转德语</span>
+            <span class="accordion-arrow">▼</span>
           </div>
-          <div class="vocab-list-container">
-            <div v-for="(word, index) in vocabList" :key="index" class="vocab-list-item">
-              <span class="vocab-list-item-text">{{ word }}</span>
-              <button class="btn-text danger" title="鍒犻櫎" @click="removeVocab(index)">&times;</button>
+          <div class="accordion-body">
+            <div>
+              <span class="label-text">目标德语难度 (自动调整句型词汇)</span>
+              <select v-model="settings.translateLevel">
+                <option value="原文直接翻译">原文直接翻译</option>
+                <option v-for="lvl in ['A1', 'A2', 'B1', 'B2', 'C1', 'C2']" :key="lvl" :value="lvl">{{ lvl }} 难度改写</option>
+              </select>
             </div>
+            <textarea v-model="settings.translateContent" placeholder="粘贴你需要转换的任意语言段落..." rows="4"></textarea>
+            <button :disabled="isGeneratingArticle" @click="generateTranslatedArticle" class="btn-primary">
+              🔄 智能转换并生成德语文章
+            </button>
           </div>
+        </div>
+
+        <!-- Tab 4: 场景对话练习 -->
+        <div class="accordion-item" :class="{ open: genMode === 'conversation' }">
+          <div class="accordion-header" @click="genMode = genMode === 'conversation' ? '' : 'conversation'">
+            <span>🗣️ 场景对话练习</span>
+            <span class="accordion-arrow">▼</span>
+          </div>
+          <div class="accordion-body">
+            <input v-model="settings.convTopic" type="text" placeholder="输入你想聊的主题 (留空则AI随机)" />
+            <button :disabled="isConvLoading" @click="startConversation" class="btn-primary">
+              🚀 开启对话练习
+            </button>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="label-text" style="margin-top: 12px; border-top: 1px dashed rgba(96,165,250,0.3); padding-top: 12px;">文章课后练习生成：</div>
+      <div class="flex-row" style="align-items: center;">
+         <input type="number" v-model.number="settings.questionCount" min="1" max="10" placeholder="题目数量" style="width: 80px;" />
+         <button @click="generateQuestions" class="btn-secondary" :disabled="!articleResult || isGeneratingQuestions" style="flex: 1;">
+             {{ isGeneratingQuestions ? '解析中...' : '📝 自动出阅读题' }}
+         </button>
+      </div>
+      <button @click="generateCloze" class="btn-secondary" :disabled="!articleResult || isGeneratingCloze" style="margin-top: 8px; width: 100%;">
+          {{ isGeneratingCloze ? '正在智能挖空...' : '🕳️ 抽取原文生成完形填空' }}
+      </button>
+    </div>
+
+    <div class="vocab-section">
+      <h3>3. 查词与生词本</h3>
+      <div class="flex-row" style="align-items: center;">
+        <input v-model="dictInput" @keyup.enter="lookupWord" type="text" placeholder="输入不认识的单词..." />
+        <button @click="lookupWord" class="btn-secondary" :disabled="isDictLoading">查询</button>
+      </div>
+      
+      <div v-if="dictResult || isDictLoading" class="dict-result-box">
+        <div v-if="isDictLoading" style="color: #60a5fa;">正在查阅词典...</div>
+        <div v-else>
+          <div v-html="formattedDictResult"></div>
+          <button @click="addDictWordToVocab" class="btn-primary" style="width: 100%; margin-top: 10px; padding: 6px;">➕ 提取原形并加入生词本</button>
         </div>
       </div>
 
-      <!-- 浣滆€呯讲鍚嶅崱鐗� -->
-      <div class="cyber-badge">
-        <span class="badge-title">Author</span>
-        <div style="margin-bottom: 4px;">浣滆€咃細hxx</div>
-        <div>GitHub 涓婚〉锛�<br><a href="https://github.com/VodkaCranberry"
-            target="_blank">https://github.com/VodkaCranberry</a></div>
+      <div v-if="vocabList.length > 0">
+        <div class="vocab-header">
+          <h4>我的生词本 ({{ vocabList.length }})</h4>
+          <div class="vocab-actions">
+            <button @click="clearVocab" class="btn-text danger">🗑️ 清空</button>
+            <button @click="exportVocab" class="btn-text">📥 导出</button>
+          </div>
+        </div>
+        <div class="vocab-list-container">
+          <div v-for="(word, index) in vocabList" :key="index" class="vocab-list-item">
+            <span class="vocab-list-item-text">{{ word }}</span>
+            <button class="btn-text danger" title="删除" @click="removeVocab(index)">&times;</button>
+          </div>
+        </div>
       </div>
+    </div>
+    
+    <!-- 作者署名卡片 -->
+    <div class="cyber-badge">
+       <span class="badge-title">Author</span>
+       <div style="margin-bottom: 4px;">作者：hxx</div>
+       <div>GitHub 主页：<br><a href="https://github.com/VodkaCranberry" target="_blank">https://github.com/VodkaCranberry</a></div>
+    </div>
 
-    </aside>
+  </aside>
 
-    <main class="main-content">
+  <main class="main-content">
+    
+    <!-- 全局状态栏 -->
+    <div class="mobile-header">
+        <button class="menu-btn" @click="isSidebarOpen = !isSidebarOpen">☰</button>
+        <h1 style="font-size: 16px; color: #60a5fa; margin: 0; text-align: center; flex: 1; font-family: 'Courier New', Courier, monospace;">DE-Reader</h1>
+        <div style="width: 24px;"></div> 
+    </div>
 
-      <!-- 鍏ㄥ眬鐘舵€佹爮 -->
-      <div class="mobile-header">
-        <button class="menu-btn" @click="isSidebarOpen = !isSidebarOpen">鈽�</button>
-        <h1
-          style="font-size: 16px; color: #60a5fa; margin: 0; text-align: center; flex: 1; font-family: 'Courier New', Courier, monospace;">
-          DE-Reader</h1>
-        <div style="width: 24px;"></div>
-      </div>
+    <!-- 顶部 View Tabs -->
+    <div class="view-tabs">
+        <button class="view-tab" :class="{active: currentView === 'article'}" @click="currentView = 'article'">📖 文章与题目</button>
+        <button class="view-tab" :class="{active: currentView === 'cloze'}" @click="currentView = 'cloze'">🕳️ 完形填空</button>
+        <button class="view-tab" :class="{active: currentView === 'vocab'}" @click="currentView = 'vocab'">📝 背单词区</button>
+        <button class="view-tab" :class="{active: currentView === 'conversation'}" @click="currentView = 'conversation'">🗣️ 情景对话</button>
+    </div>
 
-      <!-- 椤堕儴 View Tabs -->
-      <div class="view-tabs">
-        <button class="view-tab" :class="{active: currentView === 'article'}" @click="currentView = 'article'">馃摉
-          鏂囩珷涓庨�樼洰</button>
-        <button class="view-tab" :class="{active: currentView === 'cloze'}" @click="currentView = 'cloze'">馃暢锔�
-          瀹屽舰濉�绌�</button>
-        <button class="view-tab" :class="{active: currentView === 'vocab'}" @click="currentView = 'vocab'">馃摑
-          鑳屽崟璇嶅尯</button>
-        <button class="view-tab" :class="{active: currentView === 'conversation'}"
-          @click="currentView = 'conversation'">馃棧锔� 鎯呮櫙瀵硅瘽</button>
-      </div>
-
-      <div v-if="currentView === 'article'"
-        style="width: 100%; display: flex; flex-direction: column; align-items: center;">
+    <div v-if="currentView === 'article'" style="width: 100%; display: flex; flex-direction: column; align-items: center;">
         <div v-if="articleResult" class="article-card">
-          <div class="article-body" v-html="formattedArticle" @mouseup="handleSelection" @touchend="handleSelection">
-          </div>
+          <div class="article-body" v-html="formattedArticle" @mouseup="handleSelection" @touchend="handleSelection"></div>
         </div>
-
-        <!-- ========== 浼樺寲鐨� Dashboard 娆㈣繋闈㈡澘 ========== -->
+        
+        <!-- ========== 优化的 Dashboard 欢迎面板 ========== -->
         <div v-else class="welcome-card">
-          <div class="welcome-icon">馃寠</div>
-          <h2 class="welcome-title">Willkommen bei DE-Reader</h2>
-          <p class="welcome-subtitle">浣犵殑涓撳睘寰疯��娌夋蹈寮忓�︿範宸ヤ綔绔�</p>
-
-          <div class="feature-grid">
-            <div class="feature-item">
-              <span class="f-icon">馃幆</span>
-              <div class="f-text">
-                <strong>鍒嗙骇瀹氬埗闃呰��</strong>
-                <span>鏀�鎸� A1-C2 闅惧害锛屾牴鎹�鎻愮ず璇嶆垨鍗曡瘝鏈�涓€閿�鐢熸垚涓撳睘寰疯��鏂囩珷銆�</span>
-              </div>
+            <div class="welcome-icon">🌊</div>
+            <h2 class="welcome-title">Willkommen bei DE-Reader</h2>
+            <p class="welcome-subtitle">你的专属德语沉浸式学习工作站</p>
+            
+            <div class="feature-grid">
+                <div class="feature-item">
+                    <span class="f-icon">🎯</span>
+                    <div class="f-text">
+                        <strong>分级定制阅读</strong>
+                        <span>支持 A1-C2 难度，根据提示词或单词本一键生成专属德语文章。</span>
+                    </div>
+                </div>
+                <div class="feature-item">
+                    <span class="f-icon">🌍</span>
+                    <div class="f-text">
+                        <strong>任意语言转译</strong>
+                        <span>将各种语言转换为指定难度的德文，并附带重点词汇高亮与全文翻译。</span>
+                    </div>
+                </div>
+                <div class="feature-item">
+                    <span class="f-icon">🗣️</span>
+                    <div class="f-text">
+                        <strong>情景对话特训</strong>
+                        <span>与 AI 外教进行实战口语对话，获取逐句纠错与详细的评估报告。</span>
+                    </div>
+                </div>
+                <div class="feature-item">
+                    <span class="f-icon">🧠</span>
+                    <div class="f-text">
+                        <strong>阅读与词汇巩固</strong>
+                        <span>智能划词查词、完形填空、阅读理解，一站式打造背单词闭环。</span>
+                    </div>
+                </div>
             </div>
-            <div class="feature-item">
-              <span class="f-icon">馃實</span>
-              <div class="f-text">
-                <strong>浠绘剰璇�瑷€杞�璇�</strong>
-                <span>灏嗗悇绉嶈��瑷€杞�鎹�涓烘寚瀹氶毦搴︾殑寰锋枃锛屽苟闄勫甫閲嶇偣璇嶆眹楂樹寒涓庡叏鏂囩炕璇戙€�</span>
-              </div>
-            </div>
-            <div class="feature-item">
-              <span class="f-icon">馃棧锔�</span>
-              <div class="f-text">
-                <strong>鎯呮櫙瀵硅瘽鐗硅��</strong>
-                <span>涓� AI 澶栨暀杩涜�屽疄鎴樺彛璇�瀵硅瘽锛岃幏鍙栭€愬彞绾犻敊涓庤�︾粏鐨勮瘎浼版姤鍛娿€�</span>
-              </div>
-            </div>
-            <div class="feature-item">
-              <span class="f-icon">馃��</span>
-              <div class="f-text">
-                <strong>闃呰�讳笌璇嶆眹宸╁浐</strong>
-                <span>鏅鸿兘鍒掕瘝鏌ヨ瘝銆佸畬褰㈠～绌恒€侀槄璇荤悊瑙ｏ紝涓€绔欏紡鎵撻€犺儗鍗曡瘝闂�鐜�銆�</span>
-              </div>
-            </div>
-          </div>
-
-          <p class="welcome-tip">馃憠 璇峰睍寮€宸︿晶闈㈡澘锛岄€夋嫨鍔熻兘寮€濮嬪�︿範鍚э紒</p>
+            
+            <p class="welcome-tip">👉 请展开左侧面板，选择功能开始学习吧！</p>
         </div>
 
         <div v-if="quizQuestions.length > 0" class="quiz-card" @mouseup="handleSelection" @touchend="handleSelection">
-          <h3 style="margin-top: 0; color: #60a5fa;">闃呰�荤悊瑙� (Leseverstehen)</h3>
-          <div v-for="(q, i) in quizQuestions" :key="i" class="quiz-item">
-            <p><strong>{{ i+1 }}. {{ q.question }}</strong></p>
-            <div class="quiz-options">
-              <label v-for="(opt, j) in q.options" :key="j">
-                <input type="radio" :name="'q'+i" :value="opt" v-model="q.userAnswer" :disabled="q.showResult" />
-                {{ opt }}
-              </label>
+            <h3 style="margin-top: 0; color: #60a5fa;">阅读理解 (Leseverstehen)</h3>
+            <div v-for="(q, i) in quizQuestions" :key="i" class="quiz-item">
+                <p><strong>{{ i+1 }}. {{ q.question }}</strong></p>
+                <div class="quiz-options">
+                    <label v-for="(opt, j) in q.options" :key="j">
+                        <input type="radio" :name="'q'+i" :value="opt" v-model="q.userAnswer" :disabled="q.showResult" />
+                        {{ opt }}
+                    </label>
+                </div>
+                <div v-if="q.showResult" class="result-box" :style="{ backgroundColor: q.userAnswer === q.answer ? 'rgba(52, 211, 153, 0.1)' : 'rgba(248, 113, 113, 0.1)', border: q.userAnswer === q.answer ? '1px solid #34d399' : '1px solid #f87171' }">
+                    <p v-if="q.userAnswer === q.answer" style="color: #34d399; font-weight: bold;">✅ 回答正确</p>
+                    <p v-else style="color: #f87171; font-weight: bold;">❌ 回答错误。正确答案：{{ q.answer }}</p>
+                    <p style="font-size: 14px; margin-top: 8px; color: #bae6fd;"><strong>解析：</strong>{{ q.explanation }}</p>
+                </div>
             </div>
-            <div v-if="q.showResult" class="result-box"
-              :style="{ backgroundColor: q.userAnswer === q.answer ? 'rgba(52, 211, 153, 0.1)' : 'rgba(248, 113, 113, 0.1)', border: q.userAnswer === q.answer ? '1px solid #34d399' : '1px solid #f87171' }">
-              <p v-if="q.userAnswer === q.answer" style="color: #34d399; font-weight: bold;">鉁� 鍥炵瓟姝ｇ‘</p>
-              <p v-else style="color: #f87171; font-weight: bold;">鉂� 鍥炵瓟閿欒��銆傛�ｇ‘绛旀�堬細{{ q.answer }}</p>
-              <p style="font-size: 14px; margin-top: 8px; color: #bae6fd;"><strong>瑙ｆ瀽锛�</strong>{{ q.explanation }}</p>
-            </div>
-          </div>
-          <button @click="submitQuiz" class="btn-primary" style="width: 100%;"
-            v-if="!quizQuestions[0].showResult">鎻愪氦绛旀�堝苟鏌ョ湅瑙ｆ瀽</button>
-          <button @click="quizQuestions = []" class="btn-secondary" style="width: 100%;" v-else>娓呴櫎棰樼洰</button>
+            <button @click="submitQuiz" class="btn-primary" style="width: 100%;" v-if="!quizQuestions[0].showResult">提交答案并查看解析</button>
+            <button @click="quizQuestions = []" class="btn-secondary" style="width: 100%;" v-else>清除题目</button>
         </div>
-      </div>
-
-      <div v-if="currentView === 'cloze'"
-        style="width: 100%; display: flex; flex-direction: column; align-items: center;">
-        <div class="vocab-practice-card cloze-container">
-          <h2 style="margin-top: 0; color: #60a5fa;">馃暢锔� 瀹屽舰濉�绌虹壒璁� (L眉ckentext)</h2>
-          <p v-if="isGeneratingCloze" style="color: #60a5fa;">AI 姝ｅ湪鏅鸿兘鎸栫┖涓�锛岃�风◢鍊�...</p>
-          <p v-else-if="clozeParts.length === 0" style="color: #64748b;">璇峰湪宸︿晶鐐瑰嚮鈥滄娊鍙栧師鏂囩敓鎴愬畬褰㈠～绌衡€濄€�</p>
-
-          <div v-else>
-            <p style="color: #93c5fd; font-size: 14px; margin-bottom: 24px; line-height: 1.5;">
-              鏍规嵁涓婁笅鏂囧拰鍙充晶鐨勪腑鏂囬噴涔夛紝濉�鍏ユ�ｇ‘鐨勫痉鏂囥€傜郴缁熷皢瀹炴椂鏍￠獙鎮ㄧ殑鎷煎啓涓庤瘝灏惧彉鍖栥€�</p>
-
-            <template v-for="(part, index) in clozeParts" :key="index">
-              <span v-if="part.type === 'text'" v-html="part.content"></span>
-              <span v-else-if="part.type === 'blank'" class="cloze-input-wrapper">
-                <input type="text" v-model="clozeData.blanks[part.index].userInput" @input="checkCloze(part.index)"
-                  @keyup.enter="showClozeAnswer(part.index)" class="cloze-input"
-                  :class="clozeData.blanks[part.index].status" autocomplete="off" spellcheck="false" />
-                <span class="cloze-hint">[{{ clozeData.blanks[part.index].zh }}]</span>
-                <button @click="showClozeAnswer(part.index)" class="btn-secondary"
-                  style="padding: 4px 8px; font-size: 12px; margin-left: 4px; line-height: 1;" title="鏄剧ず绛旀��">馃挕</button>
-              </span>
-            </template>
-          </div>
-        </div>
-      </div>
-
-      <div v-if="currentView === 'vocab'"
-        style="width: 100%; display: flex; flex-direction: column; align-items: center;">
-        <div class="vocab-practice-card">
-          <h2 style="margin-top: 0; color: #60a5fa;">馃�� 寰疯��鍗曡瘝鍚�鍐�</h2>
-          <p v-if="isGeneratingVocabTest" style="color: #60a5fa;">姝ｅ湪璇锋眰 AI 缈昏瘧鐢熻瘝鏈�骞剁敓鎴愯瘯鍗凤紝璇风◢鍊�...</p>
-          <p v-else-if="vocabPracticeList.length === 0" style="color: #64748b;">璇峰湪宸︿晶鎵撳紑鈥滃熀浜庡崟璇嶅簱鐢熸垚鈥濆姛鑳斤紝杈撳叆鐢熻瘝鍚庣偣鍑烩€滃紑鍚�鑳屽崟璇嶆祴璇曗€濄€�</p>
-
-          <div v-else>
-            <p style="color: #93c5fd; font-size: 14px; margin-bottom: 24px;">鏍规嵁涓�鏂囬噴涔夛紝杈撳叆寰锋枃鍗曡瘝锛堝�傛灉鏄�鍚嶈瘝璇峰姟蹇呭甫涓婂畾鍐犺瘝
-              der/die/das锛夈€傛嫾鍐欐�ｇ‘灏嗚嚜鍔ㄥ彉缁裤€�</p>
-            <div v-for="(item, index) in vocabPracticeList" :key="index" class="vocab-row">
-              <div class="vocab-zh"
-                style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
-                <span style="margin-right: 8px;">{{ item.zh }}</span>
-                <button @click="showVocabAnswer(item)" class="btn-secondary"
-                  style="padding: 4px 10px; font-size: 12px; white-space: nowrap; height: 28px; line-height: 1;">鏌ョ湅绛旀��</button>
-              </div>
-              <input v-model="item.userInput" @input="checkVocab(item)" class="vocab-de-input" :class="item.status"
-                placeholder="杈撳叆寰锋枃..." autocomplete="off" spellcheck="false" />
-              <div class="status-icon">
-                <span v-if="item.status === 'correct'" style="color: #34d399;">鉁�</span>
-                <span v-if="item.status === 'incorrect' && item.userInput.length > 0" style="color: #f87171;">鉂�</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- 鎯呮櫙瀵硅瘽缁冧範鍖� -->
-      <div v-if="currentView === 'conversation'"
-        style="width: 100%; display: flex; flex-direction: column; align-items: center;">
-        <!-- 鍖呰９ mouseup 浣垮緱瀵硅瘽涓�鐨勫崟璇嶄篃鍙�浠ュ垝璇嶇炕璇� -->
-        <div class="article-card" @mouseup="handleSelection" @touchend="handleSelection"
-          style="display:flex; flex-direction:column; gap: 16px;">
-          <h2 style="margin-top: 0; color: #60a5fa;">馃棧锔� 寰疯��瀵硅瘽缁冧範 <span v-if="settings.convTopic"
-              style="color: #93c5fd; font-size: 16px;">- {{settings.convTopic}}</span></h2>
-
-          <div v-if="conversationHistory.length === 0 && !isConvLoading" style="color: #64748b;">
-            璇峰湪宸︿晶渚ц竟鏍忎腑閫夋嫨鈥滃満鏅�瀵硅瘽缁冧範鈥濆苟鐐瑰嚮寮€鍚�銆�</div>
-
-          <!-- 鑱婂ぉ娴� -->
-          <div v-for="(msg, index) in conversationHistory" :key="index"
-            style="display:flex; flex-direction:column; gap: 8px;">
-            <!-- User Msg -->
-            <div v-if="msg.role === 'user'"
-              style="align-self: flex-end; background: linear-gradient(135deg, #1e40af, #2563eb); color: white; padding: 10px 14px; border-radius: 6px; max-width: 85%; line-height: 1.5; font-size: 15px;">
-              {{ msg.content }}
-            </div>
-            <!-- Assistant Msg -->
-            <div v-if="msg.role === 'assistant'"
-              style="align-self: flex-start; background: rgba(30, 41, 59, 0.9); border: 1px solid rgba(59, 130, 246, 0.2); color: #f1f5f9; padding: 14px; border-radius: 6px; width: 100%; line-height: 1.6; font-size: 16px; box-shadow: inset 0 0 10px rgba(0,0,0,0.3);">
-              <!-- 姝ｅ父鍥炲�� -->
-              <div v-html="formatChatMessage(msg.content)"></div>
-              <!-- 鐐硅瘎寤鸿��鍖� (浠呭湪瀵硅瘽绗�浜岃疆璧峰嚭鐜�) -->
-              <div v-if="msg.suggestion"
-                style="margin-top: 12px; padding-top: 12px; border-top: 1px dashed rgba(59,130,246,0.3); color: #93c5fd; font-size: 14px;"
-                v-html="formatChatMessage(msg.suggestion)"></div>
-            </div>
-          </div>
-
-          <div v-if="isConvLoading" style="color: #60a5fa; align-self: flex-start; font-style: italic;">AI 姝ｅ湪杈撳叆涓�...
-          </div>
-
-          <!-- 璇勪及鎶ュ憡灞曠ず鍖� -->
-          <div v-if="convReport"
-            style="margin-top: 20px; padding: 20px; background: rgba(52, 211, 153, 0.05); border: 1px solid #34d399; border-radius: 6px; line-height: 1.8;">
-            <h3 style="color: #34d399; margin-top: 0; display:flex; align-items:center; gap:8px;">馃搳 瀵硅瘽璇勪及鎶ュ憡</h3>
-            <div v-html="formatChatMessage(convReport)" style="font-size: 15px; color: #f1f5f9;"></div>
-          </div>
-
-          <!-- 鐢ㄦ埛杈撳叆浜や簰鍖� -->
-          <div v-if="conversationHistory.length > 0 && !convReport"
-            style="display: flex; flex-direction: column; gap: 12px; margin-top: 20px; border-top: 1px solid rgba(59, 130, 246, 0.2); padding-top: 16px;">
-            <textarea v-model="convInput" placeholder="杈撳叆浣犵殑寰疯��鍥炲�� (鍙�鐩存帴鎵撳瓧鎴栫偣鍑讳竴閿�姹傚姪)..." rows="3"
-              style="width: 100%; font-size: 15px;"></textarea>
-            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-              <button @click="sendConvMessage" :disabled="isConvLoading || !convInput.trim()" class="btn-primary"
-                style="flex: 2; min-width: 120px;">鉁夛笍 鍙戦€佸洖澶�</button>
-              <button @click="getConvHint" :disabled="isConvLoading" class="btn-secondary"
-                style="flex: 1; min-width: 100px;">馃挕 涓€閿�鍥炵瓟</button>
-              <button @click="endConversation" :disabled="isConvLoading" class="btn-secondary"
-                style="flex: 1; min-width: 100px; border-color: rgba(248,113,113,0.5); color: #f87171;">馃洃
-                缁撴潫骞舵姤鍛�</button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </main>
-
-    <div v-if="tooltip.visible" class="translation-tooltip"
-      :style="{ left: tooltip.x + 'px', top: tooltip.isAbove ? 'auto' : tooltip.y + 'px', bottom: tooltip.isAbove ? tooltip.y + 'px' : 'auto' }">
-      <div class="tooltip-header">
-        <span class="tooltip-title">馃挕 鍒掕瘝缈昏瘧</span>
-        <button class="tooltip-close" @click="closeTooltip">&times;</button>
-      </div>
-      <div class="tooltip-content">
-        <div v-if="tooltip.isLoading && !tooltip.translation" style="color: #60a5fa;">AI 姝ｅ湪椋為€熺炕璇�...</div>
-        <div v-else class="tooltip-text" v-html="formattedTooltip"></div>
-      </div>
-      <div class="tooltip-footer" v-if="!tooltip.isLoading && tooltip.translation && isSingleWord(tooltip.text)">
-        <button @click="addTooltipWordToVocab" class="btn-primary"
-          style="padding: 8px 12px; font-size: 14px; width: 100%; border-radius: 0 0 3px 3px; border-top: none;">鍔犲叆鐢熻瘝鏈�
-          (鎻愬彇鍘熷舰)</button>
-      </div>
     </div>
 
-    <div class="floating-container">
-      <div v-if="isChatOpen" class="chat-panel">
-        <!-- 鑱婂ぉ璁板綍娓呯悊锛堟柊瀵硅瘽锛� -->
-        <div class="chat-header">
-          <span>寰疯�� AI 鍔╂墜</span>
-          <div style="display:flex; gap: 12px; align-items: center;">
-            <button @click="startNewChat"
-              style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3); border-radius: 4px; color: white; padding: 4px 8px; font-size: 12px; cursor: pointer; transition: 0.3s;">馃攧
-              鏂板�硅瘽</button>
-            <button @click="isChatOpen = false"
-              style="background:none;border:none;color:white;font-size:24px;cursor:pointer;line-height:1;">&times;</button>
-          </div>
+    <div v-if="currentView === 'cloze'" style="width: 100%; display: flex; flex-direction: column; align-items: center;">
+        <div class="vocab-practice-card cloze-container">
+            <h2 style="margin-top: 0; color: #60a5fa;">🕳️ 完形填空特训 (Lückentext)</h2>
+            <p v-if="isGeneratingCloze" style="color: #60a5fa;">AI 正在智能挖空中，请稍候...</p>
+            <p v-else-if="clozeParts.length === 0" style="color: #64748b;">请在左侧点击“抽取原文生成完形填空”。</p>
+            
+            <div v-else>
+                <p style="color: #93c5fd; font-size: 14px; margin-bottom: 24px; line-height: 1.5;">根据上下文和右侧的中文释义，填入正确的德文。系统将实时校验您的拼写与词尾变化。</p>
+                
+                <template v-for="(part, index) in clozeParts" :key="index">
+                    <span v-if="part.type === 'text'" v-html="part.content"></span>
+                    <span v-else-if="part.type === 'blank'" class="cloze-input-wrapper">
+                        <input 
+                           type="text"
+                           v-model="clozeData.blanks[part.index].userInput" 
+                           @input="checkCloze(part.index)"
+                           @keyup.enter="showClozeAnswer(part.index)" 
+                           class="cloze-input" 
+                           :class="clozeData.blanks[part.index].status" 
+                           autocomplete="off" 
+                           spellcheck="false" 
+                        />
+                        <span class="cloze-hint">[{{ clozeData.blanks[part.index].zh }}]</span>
+                        <button @click="showClozeAnswer(part.index)" class="btn-secondary" style="padding: 4px 8px; font-size: 12px; margin-left: 4px; line-height: 1;" title="显示答案">💡</button>
+                    </span>
+                </template>
+            </div>
         </div>
-        <div class="chat-messages" ref="chatScrollRef">
-          <div v-for="(msg, index) in chatHistory" :key="index" :class="['chat-message', msg.role]">
-            <div class="message-content" v-html="formatChatMessage(msg.content)"></div>
-          </div>
+    </div>
+
+    <div v-if="currentView === 'vocab'" style="width: 100%; display: flex; flex-direction: column; align-items: center;">
+        <div class="vocab-practice-card">
+            <h2 style="margin-top: 0; color: #60a5fa;">🧠 德语单词听写</h2>
+            <p v-if="isGeneratingVocabTest" style="color: #60a5fa;">正在请求 AI 翻译生词本并生成试卷，请稍候...</p>
+            <p v-else-if="vocabPracticeList.length === 0" style="color: #64748b;">请在左侧打开“基于单词库生成”功能，输入生词后点击“开启背单词测试”。</p>
+            
+            <div v-else>
+                <p style="color: #93c5fd; font-size: 14px; margin-bottom: 24px;">根据中文释义，输入德文单词（如果是名词请务必带上定冠词 der/die/das）。拼写正确将自动变绿。</p>
+                <div v-for="(item, index) in vocabPracticeList" :key="index" class="vocab-row">
+                    <div class="vocab-zh" style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
+                        <span style="margin-right: 8px;">{{ item.zh }}</span>
+                        <button @click="showVocabAnswer(item)" class="btn-secondary" style="padding: 4px 10px; font-size: 12px; white-space: nowrap; height: 28px; line-height: 1;">查看答案</button>
+                    </div>
+                    <input 
+                       v-model="item.userInput" 
+                       @input="checkVocab(item)" 
+                       class="vocab-de-input" 
+                       :class="item.status" 
+                       placeholder="输入德文..." 
+                       autocomplete="off" 
+                       spellcheck="false" 
+                    />
+                    <div class="status-icon">
+                        <span v-if="item.status === 'correct'" style="color: #34d399;">✅</span>
+                        <span v-if="item.status === 'incorrect' && item.userInput.length > 0" style="color: #f87171;">❌</span>
+                    </div>
+                </div>
+            </div>
         </div>
-        <div class="chat-footer">
-          <!-- 蹇�鎹疯緭鍏ユ寜閽� -->
-          <div class="chat-footer-row">
-            <button @click="sendQuickPrompt('璇峰府鎴戠炕璇戝叏鏂囥€�')" class="btn-secondary"
-              style="flex: 1; padding: 6px; font-size: 12px;">馃搫 缈昏瘧鍏ㄦ枃</button>
-            <button @click="sendQuickPrompt('璇峰府鎴戝垎鏋愯繖绡囨枃绔犵殑閲嶇偣鍙ュ瀷鍜岃��娉曘€�')" class="btn-secondary"
-              style="flex: 1; padding: 6px; font-size: 12px;">馃攳 閲嶇偣鍙ュ瀷</button>
-          </div>
-          <div class="chat-footer-row">
-            <input v-model="chatInput" @keyup.enter="sendChatMessage" type="text" placeholder="闂�闂� AI..."
-              :disabled="isChatLoading" />
-            <button @click="sendChatMessage" :disabled="isChatLoading" class="btn-primary"
-              style="padding:8px 16px;">鍙戦€�</button>
-          </div>
+    </div>
+
+    <!-- 情景对话练习区 -->
+    <div v-if="currentView === 'conversation'" style="width: 100%; display: flex; flex-direction: column; align-items: center;">
+        <!-- 包裹 mouseup 使得对话中的单词也可以划词翻译 -->
+        <div class="article-card" @mouseup="handleSelection" @touchend="handleSelection" style="display:flex; flex-direction:column; gap: 16px;">
+            <h2 style="margin-top: 0; color: #60a5fa;">🗣️ 德语对话练习 <span v-if="settings.convTopic" style="color: #93c5fd; font-size: 16px;">- {{settings.convTopic}}</span></h2>
+            
+            <div v-if="conversationHistory.length === 0 && !isConvLoading" style="color: #64748b;">请在左侧侧边栏中选择“场景对话练习”并点击开启。</div>
+            
+            <!-- 聊天流 -->
+            <div v-for="(msg, index) in conversationHistory" :key="index" style="display:flex; flex-direction:column; gap: 8px;">
+                <!-- User Msg -->
+                <div v-if="msg.role === 'user'" style="align-self: flex-end; background: linear-gradient(135deg, #1e40af, #2563eb); color: white; padding: 10px 14px; border-radius: 6px; max-width: 85%; line-height: 1.5; font-size: 15px;">
+                    {{ msg.content }}
+                </div>
+                <!-- Assistant Msg -->
+                <div v-if="msg.role === 'assistant'" style="align-self: flex-start; background: rgba(30, 41, 59, 0.9); border: 1px solid rgba(59, 130, 246, 0.2); color: #f1f5f9; padding: 14px; border-radius: 6px; width: 100%; line-height: 1.6; font-size: 16px; box-shadow: inset 0 0 10px rgba(0,0,0,0.3);">
+                    <!-- 正常回复 -->
+                    <div v-html="formatChatMessage(msg.content)"></div>
+                    <!-- 点评建议区 (仅在对话第二轮起出现) -->
+                    <div v-if="msg.suggestion" style="margin-top: 12px; padding-top: 12px; border-top: 1px dashed rgba(59,130,246,0.3); color: #93c5fd; font-size: 14px;" v-html="formatChatMessage(msg.suggestion)"></div>
+                </div>
+            </div>
+            
+            <div v-if="isConvLoading" style="color: #60a5fa; align-self: flex-start; font-style: italic;">AI 正在输入中...</div>
+            
+            <!-- 评估报告展示区 -->
+            <div v-if="convReport" style="margin-top: 20px; padding: 20px; background: rgba(52, 211, 153, 0.05); border: 1px solid #34d399; border-radius: 6px; line-height: 1.8;">
+                <h3 style="color: #34d399; margin-top: 0; display:flex; align-items:center; gap:8px;">📊 对话评估报告</h3>
+                <div v-html="formatChatMessage(convReport)" style="font-size: 15px; color: #f1f5f9;"></div>
+            </div>
+
+            <!-- 用户输入交互区 -->
+            <div v-if="conversationHistory.length > 0 && !convReport" style="display: flex; flex-direction: column; gap: 12px; margin-top: 20px; border-top: 1px solid rgba(59, 130, 246, 0.2); padding-top: 16px;">
+                <textarea v-model="convInput" placeholder="输入你的德语回复 (可直接打字或点击一键求助)..." rows="3" style="width: 100%; font-size: 15px;"></textarea>
+                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                    <button @click="sendConvMessage" :disabled="isConvLoading || !convInput.trim()" class="btn-primary" style="flex: 2; min-width: 120px;">✉️ 发送回复</button>
+                    <button @click="getConvHint" :disabled="isConvLoading" class="btn-secondary" style="flex: 1; min-width: 100px;">💡 一键回答</button>
+                    <button @click="endConversation" :disabled="isConvLoading" class="btn-secondary" style="flex: 1; min-width: 100px; border-color: rgba(248,113,113,0.5); color: #f87171;">🛑 结束并报告</button>
+                </div>
+            </div>
         </div>
-      </div>
-      <button @click="isChatOpen = !isChatOpen" class="floating-ball" title="鍚� AI 鎻愰棶">
-        <span v-if="!isChatOpen">馃挰</span><span v-else style="font-size:28px;line-height:1;">&times;</span>
-      </button>
+    </div>
+  </main>
+
+  <div v-if="tooltip.visible" class="translation-tooltip" :style="{ left: tooltip.x + 'px', top: tooltip.isAbove ? 'auto' : tooltip.y + 'px', bottom: tooltip.isAbove ? tooltip.y + 'px' : 'auto' }">
+    <div class="tooltip-header">
+      <span class="tooltip-title">💡 划词翻译</span>
+      <button class="tooltip-close" @click="closeTooltip">&times;</button>
+    </div>
+    <div class="tooltip-content">
+      <div v-if="tooltip.isLoading && !tooltip.translation" style="color: #60a5fa;">AI 正在飞速翻译...</div>
+      <div v-else class="tooltip-text" v-html="formattedTooltip"></div>
+    </div>
+    <div class="tooltip-footer" v-if="!tooltip.isLoading && tooltip.translation && isSingleWord(tooltip.text)">
+      <button @click="addTooltipWordToVocab" class="btn-primary" style="padding: 8px 12px; font-size: 14px; width: 100%; border-radius: 0 0 3px 3px; border-top: none;">加入生词本 (提取原形)</button>
     </div>
   </div>
 
-  <script>
-    const { createApp, ref, reactive, computed, onMounted, watch, nextTick } = Vue;
+  <div class="floating-container">
+    <div v-if="isChatOpen" class="chat-panel">
+      <!-- 聊天记录清理（新对话） -->
+      <div class="chat-header">
+        <span>德语 AI 助手</span>
+        <div style="display:flex; gap: 12px; align-items: center;">
+          <button @click="startNewChat" style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3); border-radius: 4px; color: white; padding: 4px 8px; font-size: 12px; cursor: pointer; transition: 0.3s;">🔄 新对话</button>
+          <button @click="isChatOpen = false" style="background:none;border:none;color:white;font-size:24px;cursor:pointer;line-height:1;">&times;</button>
+        </div>
+      </div>
+      <div class="chat-messages" ref="chatScrollRef">
+        <div v-for="(msg, index) in chatHistory" :key="index" :class="['chat-message', msg.role]">
+          <div class="message-content" v-html="formatChatMessage(msg.content)"></div>
+        </div>
+      </div>
+      <div class="chat-footer">
+        <!-- 快捷输入按钮 -->
+        <div class="chat-footer-row">
+            <button @click="sendQuickPrompt('请帮我翻译全文。')" class="btn-secondary" style="flex: 1; padding: 6px; font-size: 12px;">📄 翻译全文</button>
+            <button @click="sendQuickPrompt('请帮我分析这篇文章的重点句型和语法。')" class="btn-secondary" style="flex: 1; padding: 6px; font-size: 12px;">🔍 重点句型</button>
+        </div>
+        <div class="chat-footer-row">
+            <input v-model="chatInput" @keyup.enter="sendChatMessage" type="text" placeholder="问问 AI..." :disabled="isChatLoading"/>
+            <button @click="sendChatMessage" :disabled="isChatLoading" class="btn-primary" style="padding:8px 16px;">发送</button>
+        </div>
+      </div>
+    </div>
+    <button @click="isChatOpen = !isChatOpen" class="floating-ball" title="向 AI 提问">
+      <span v-if="!isChatOpen">💬</span><span v-else style="font-size:28px;line-height:1;">&times;</span>
+    </button>
+  </div>
+</div>
 
-    createApp({
-      setup() {
-        const isSidebarOpen = ref(window.innerWidth > 768);
-        const currentView = ref('article');
-        const genMode = ref('topic');
+<script>
+  const { createApp, ref, reactive, computed, onMounted, watch, nextTick } = Vue;
 
-        // 銆愪慨鏀圭偣锛氭柊澧� model 閰嶇疆椤广€�
-        const config = reactive({ baseUrl: 'https://api.deepseek.com/v1', apiKey: '', model: 'deepseek-chat' });
-        const settings = reactive({
-          level: 'B1', words: '', topic: '', wordCount: 300, questionCount: 3,
-          translateLevel: '鍘熸枃鐩存帴缈昏瘧', translateContent: '',
-          convTopic: ''
+  createApp({
+    setup() {
+      const isSidebarOpen = ref(window.innerWidth > 768); 
+      const currentView = ref('article'); 
+      const genMode = ref('topic'); 
+
+      // 【修改点：新增 model 配置项】
+      const config = reactive({ baseUrl: 'https://api.deepseek.com/v1', apiKey: '', model: 'deepseek-chat' });
+      const settings = reactive({ 
+        level: 'B1', words: '', topic: '', wordCount: 300, questionCount: 3,
+        translateLevel: '原文直接翻译', translateContent: '',
+        convTopic: ''
+      });
+      
+      const articleResult = ref('');
+      const isGeneratingArticle = ref(false);
+
+      const quizQuestions = ref([]);
+      const isGeneratingQuestions = ref(false);
+
+      const vocabList = ref([]);
+      const dictInput = ref('');
+      const dictResult = ref('');
+      const isDictLoading = ref(false);
+      const currentLookupWord = ref(''); 
+
+      const vocabPracticeList = ref([]);
+      const isGeneratingVocabTest = ref(false);
+
+      const clozeData = ref({ text: '', blanks: [] });
+      const clozeParts = ref([]);
+      const isGeneratingCloze = ref(false);
+
+      const conversationHistory = ref([]);
+      const convInput = ref('');
+      const isConvLoading = ref(false);
+      const convReport = ref('');
+
+      const tooltip = reactive({ visible: false, x: 0, y: 0, isAbove: false, text: '', translation: '', isLoading: false });
+      let translateAbortController = null;
+      let selectionTimeout = null; 
+
+      const isChatOpen = ref(false);
+      const chatInput = ref('');
+      const isChatLoading = ref(false);
+      const chatScrollRef = ref(null);
+      const chatHistory = ref([{ role: 'assistant', content: 'Hallo! 阅读中遇到任何问题都可以问我。' }]);
+
+      onMounted(() => {
+        const savedConfig = localStorage.getItem('de_reader_config_html');
+        // 恢复配置时也会包含 model 字段
+        if (savedConfig) Object.assign(config, JSON.parse(savedConfig));
+        
+        const savedSettings = localStorage.getItem('de_reader_settings');
+        if(savedSettings) {
+             const parsed = JSON.parse(savedSettings);
+             settings.level = parsed.level || 'B1';
+             settings.wordCount = parsed.wordCount || 300;
+             settings.topic = parsed.topic || '';
+             settings.translateLevel = parsed.translateLevel || '原文直接翻译';
+             settings.translateContent = parsed.translateContent || '';
+             settings.convTopic = parsed.convTopic || '';
+        }
+        const savedVocab = localStorage.getItem('de_reader_vocab');
+        if (savedVocab) vocabList.value = JSON.parse(savedVocab);
+
+        document.addEventListener('mousedown', (e) => {
+          const tooltipEl = document.querySelector('.translation-tooltip');
+          if (tooltipEl && tooltipEl.contains(e.target)) return; 
+          setTimeout(() => { if (!window.getSelection().toString().trim()) closeTooltip(); }, 10);
         });
 
-        const articleResult = ref('');
-        const isGeneratingArticle = ref(false);
-
-        const quizQuestions = ref([]);
-        const isGeneratingQuestions = ref(false);
-
-        const vocabList = ref([]);
-        const dictInput = ref('');
-        const dictResult = ref('');
-        const isDictLoading = ref(false);
-        const currentLookupWord = ref('');
-
-        const vocabPracticeList = ref([]);
-        const isGeneratingVocabTest = ref(false);
-
-        const clozeData = ref({ text: '', blanks: [] });
-        const clozeParts = ref([]);
-        const isGeneratingCloze = ref(false);
-
-        const conversationHistory = ref([]);
-        const convInput = ref('');
-        const isConvLoading = ref(false);
-        const convReport = ref('');
-
-        const tooltip = reactive({ visible: false, x: 0, y: 0, isAbove: false, text: '', translation: '', isLoading: false });
-        let translateAbortController = null;
-        let selectionTimeout = null;
-
-        const isChatOpen = ref(false);
-        const chatInput = ref('');
-        const isChatLoading = ref(false);
-        const chatScrollRef = ref(null);
-        const chatHistory = ref([{ role: 'assistant', content: 'Hallo! 闃呰�讳腑閬囧埌浠讳綍闂�棰橀兘鍙�浠ラ棶鎴戙€�' }]);
-
-        onMounted(() => {
-          const savedConfig = localStorage.getItem('de_reader_config_html');
-          // 鎭㈠�嶉厤缃�鏃朵篃浼氬寘鍚� model 瀛楁��
-          if (savedConfig) Object.assign(config, JSON.parse(savedConfig));
-
-          const savedSettings = localStorage.getItem('de_reader_settings');
-          if (savedSettings) {
-            const parsed = JSON.parse(savedSettings);
-            settings.level = parsed.level || 'B1';
-            settings.wordCount = parsed.wordCount || 300;
-            settings.topic = parsed.topic || '';
-            settings.translateLevel = parsed.translateLevel || '鍘熸枃鐩存帴缈昏瘧';
-            settings.translateContent = parsed.translateContent || '';
-            settings.convTopic = parsed.convTopic || '';
-          }
-          const savedVocab = localStorage.getItem('de_reader_vocab');
-          if (savedVocab) vocabList.value = JSON.parse(savedVocab);
-
-          document.addEventListener('mousedown', (e) => {
-            const tooltipEl = document.querySelector('.translation-tooltip');
-            if (tooltipEl && tooltipEl.contains(e.target)) return;
-            setTimeout(() => { if (!window.getSelection().toString().trim()) closeTooltip(); }, 10);
-          });
-
-          document.addEventListener('selectionchange', () => {
-            clearTimeout(selectionTimeout);
-            selectionTimeout = setTimeout(() => {
-              const selection = window.getSelection();
-              if (selection && selection.toString().trim()) {
-                const node = selection.anchorNode;
-                if (node && node.nodeType) {
-                  const el = node.nodeType === 3 ? node.parentNode : node;
-                  if (el && el.closest && (el.closest('.article-card') || el.closest('.quiz-card'))) {
-                    handleSelection();
-                  }
+        document.addEventListener('selectionchange', () => {
+          clearTimeout(selectionTimeout);
+          selectionTimeout = setTimeout(() => {
+            const selection = window.getSelection();
+            if (selection && selection.toString().trim()) {
+              const node = selection.anchorNode;
+              if (node && node.nodeType) {
+                const el = node.nodeType === 3 ? node.parentNode : node;
+                if (el && el.closest && (el.closest('.article-card') || el.closest('.quiz-card'))) {
+                  handleSelection();
                 }
               }
-            }, 300);
-          });
+            }
+          }, 300); 
         });
+      });
 
-        watch(config, (newVal) => { localStorage.setItem('de_reader_config_html', JSON.stringify(newVal)); }, { deep: true });
-        watch(() => [settings.level, settings.wordCount, settings.topic, settings.translateLevel, settings.translateContent, settings.convTopic], ([level, count, topic, transLevel, transContent, convTopic]) => {
-          localStorage.setItem('de_reader_settings', JSON.stringify({ level, wordCount: count, topic, translateLevel: transLevel, translateContent: transContent, convTopic }));
-        });
-        watch(vocabList, (newVal) => { localStorage.setItem('de_reader_vocab', JSON.stringify(newVal)); }, { deep: true });
+      watch(config, (newVal) => { localStorage.setItem('de_reader_config_html', JSON.stringify(newVal)); }, { deep: true });
+      watch(() => [settings.level, settings.wordCount, settings.topic, settings.translateLevel, settings.translateContent, settings.convTopic], ([level, count, topic, transLevel, transContent, convTopic]) => { 
+          localStorage.setItem('de_reader_settings', JSON.stringify({level, wordCount: count, topic, translateLevel: transLevel, translateContent: transContent, convTopic})); 
+      });
+      watch(vocabList, (newVal) => { localStorage.setItem('de_reader_vocab', JSON.stringify(newVal)); }, { deep: true });
 
-        const formattedArticle = computed(() => {
-          if (!articleResult.value) return '';
-          let html = articleResult.value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\n/g, '<br>');
-          html = html.replace(/\*\*\s*(.*?)\s*\|\s*(.*?)\s*\*\*/g, '<strong style="color: #60a5fa; border-bottom: 1px dashed rgba(96,165,250,0.5);">$1</strong>');
-          html = html.replace(/\*\*(.*?)\*\*/g, '<strong style="color: #60a5fa; border-bottom: 1px dashed rgba(96,165,250,0.5);">$1</strong>');
-          return html;
-        });
+      const formattedArticle = computed(() => {
+        if (!articleResult.value) return '';
+        let html = articleResult.value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\n/g, '<br>');
+        html = html.replace(/\*\*\s*(.*?)\s*\|\s*(.*?)\s*\*\*/g, '<strong style="color: #60a5fa; border-bottom: 1px dashed rgba(96,165,250,0.5);">$1</strong>');
+        html = html.replace(/\*\*(.*?)\*\*/g, '<strong style="color: #60a5fa; border-bottom: 1px dashed rgba(96,165,250,0.5);">$1</strong>');
+        return html;
+      });
 
-        function applyGenderColors(text) {
+      function applyGenderColors(text) {
           if (!text) return '';
           let html = text;
           html = html.replace(/<M>(.*?)<\/M>/gi, '###M###$1###END###');
           html = html.replace(/<F>(.*?)<\/F>/gi, '###F###$1###END###');
           html = html.replace(/<N>(.*?)<\/N>/gi, '###N###$1###END###');
           html = html.replace(/\[BASE:.*?\]\s*/gi, '');
-          html = html.replace(/(鏍囩�緗鏍囪�皘鏍煎紡|鍘熷舰|娉ㄦ剰)\s*--[>\&gt;]?\s*/gi, '');
+          html = html.replace(/(标签|标记|格式|原形|注意)\s*--[>\&gt;]?\s*/gi, '');
           html = html.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\n/g, '<br>');
           html = html.replace(/###M###(.*?)###END###/g, '<span style="color:#60a5fa; font-weight:bold;">$1</span>');
           html = html.replace(/###F###(.*?)###END###/g, '<span style="color:#f87171; font-weight:bold;">$1</span>');
           html = html.replace(/###N###(.*?)###END###/g, '<span style="color:#4ade80; font-weight:bold;">$1</span>');
           html = html.replace(/\*\*(.*?)\*\*/g, '<strong style="color: #60a5fa;">$1</strong>');
           return html;
-        }
+      }
 
-        function formatChatMessage(text) {
+      function formatChatMessage(text) {
           if (!text) return '';
           let html = text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\n/g, '<br>');
           html = html.replace(/\*\*(.*?)\*\*/g, '<strong style="color: #60a5fa;">$1</strong>');
           return html;
-        }
+      }
 
-        const formattedTooltip = computed(() => {
-          return applyGenderColors(tooltip.translation);
-        });
+      const formattedTooltip = computed(() => {
+        return applyGenderColors(tooltip.translation);
+      });
 
-        const formattedDictResult = computed(() => {
-          return applyGenderColors(dictResult.value);
-        });
+      const formattedDictResult = computed(() => {
+        return applyGenderColors(dictResult.value);
+      });
 
-        function extractBaseWord(text, fallbackText) {
+      function extractBaseWord(text, fallbackText) {
           const match = text.match(/\[BASE:\s*(.*?)\s*\]/i);
           if (match && match[1]) {
-            return match[1].replace(/\*/g, '').trim();
+             return match[1].replace(/\*/g, '').trim();
           }
-          return fallbackText.replace(/[^a-zA-Z盲枚眉脽脛脰脺\s-]/g, '').trim();
-        }
+          return fallbackText.replace(/[^a-zA-ZäöüßÄÖÜ\s-]/g, '').trim();
+      }
 
-        // 銆愪慨鏀圭偣锛氬姩鎬佽幏鍙� config.model锛屽幓闄� baseUrl 鏈�灏惧�氫綑鐨勬枩鏉犮€�
-        async function fetchAIStream(messages, onChunk, onDone, signal = null) {
-          if (!config.apiKey) { alert('璇峰厛閰嶇疆 API Key'); return; }
-          try {
-            const baseUrl = config.baseUrl.replace(/\/+$/, '');
-            const response = await fetch(`${baseUrl}/chat/completions`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${config.apiKey}` },
-              body: JSON.stringify({ model: config.model || 'deepseek-chat', messages, stream: true }),
-              signal
-            });
-            if (!response.ok) throw new Error(`HTTP 閿欒��: ${response.status}`);
-            const reader = response.body.getReader();
-            const decoder = new TextDecoder('utf-8');
-            let buffer = '';
-            while (true) {
-              const { done, value } = await reader.read();
-              if (done) break;
-              buffer += decoder.decode(value, { stream: true });
-              const lines = buffer.split('\n');
-              buffer = lines.pop();
-              for (const line of lines) {
-                const cleanLine = line.trim();
-                if (!cleanLine || cleanLine === 'data: [DONE]') continue;
-                if (cleanLine.startsWith('data: ')) {
-                  try {
-                    const content = JSON.parse(cleanLine.slice(6)).choices[0]?.delta?.content || '';
-                    if (content) onChunk(content);
-                  } catch (e) { }
-                }
+      // 【修改点：动态获取 config.model，去除 baseUrl 末尾多余的斜杠】
+      async function fetchAIStream(messages, onChunk, onDone, signal = null) {
+        if (!config.apiKey) { alert('请先配置 API Key'); return; }
+        try {
+          const baseUrl = config.baseUrl.replace(/\/+$/, '');
+          const response = await fetch(`${baseUrl}/chat/completions`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${config.apiKey}` },
+            body: JSON.stringify({ model: config.model || 'deepseek-chat', messages, stream: true }),
+            signal
+          });
+          if (!response.ok) throw new Error(`HTTP 错误: ${response.status}`);
+          const reader = response.body.getReader();
+          const decoder = new TextDecoder('utf-8');
+          let buffer = '';
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            buffer += decoder.decode(value, { stream: true });
+            const lines = buffer.split('\n');
+            buffer = lines.pop();
+            for (const line of lines) {
+              const cleanLine = line.trim();
+              if (!cleanLine || cleanLine === 'data: [DONE]') continue;
+              if (cleanLine.startsWith('data: ')) {
+                try {
+                  const content = JSON.parse(cleanLine.slice(6)).choices[0]?.delta?.content || '';
+                  if (content) onChunk(content);
+                } catch (e) {}
               }
             }
-            if (onDone) onDone();
-          } catch (error) {
-            if (error.name === 'AbortError') return;
-            alert(`缃戠粶璇锋眰寮傚父: ${error.message}`);
-            if (onDone) onDone();
           }
+          if (onDone) onDone();
+        } catch (error) {
+          if (error.name === 'AbortError') return;
+          alert(`网络请求异常: ${error.message}`);
+          if (onDone) onDone();
         }
+      }
 
-        // 銆愪慨鏀圭偣锛氬姩鎬佽幏鍙� config.model锛屽幓闄� baseUrl 鏈�灏惧�氫綑鐨勬枩鏉犮€�
-        async function fetchAIJson(messages, loadingRef) {
-          if (!config.apiKey) { alert('璇峰厛閰嶇疆 API Key'); return null; }
-          loadingRef.value = true;
-          try {
-            const baseUrl = config.baseUrl.replace(/\/+$/, '');
-            const response = await fetch(`${baseUrl}/chat/completions`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${config.apiKey}` },
-              body: JSON.stringify({ model: config.model || 'deepseek-chat', messages, stream: false })
-            });
-            if (!response.ok) throw new Error(`HTTP 閿欒��: ${response.status}`);
-            const data = await response.json();
-            const content = data.choices[0].message.content;
-            let cleaned = content.replace(/```json/gi, '').replace(/```/g, '').trim();
-            return JSON.parse(cleaned);
-          } catch (error) {
-            alert(`鏁版嵁杩斿洖閿欒��: ${error.message}\n璇烽噸璇曘€俙);
-            return null;
-          } finally {
-            loadingRef.value = false;
-          }
+      // 【修改点：动态获取 config.model，去除 baseUrl 末尾多余的斜杠】
+      async function fetchAIJson(messages, loadingRef) {
+        if (!config.apiKey) { alert('请先配置 API Key'); return null; }
+        loadingRef.value = true;
+        try {
+          const baseUrl = config.baseUrl.replace(/\/+$/, '');
+          const response = await fetch(`${baseUrl}/chat/completions`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${config.apiKey}` },
+            body: JSON.stringify({ model: config.model || 'deepseek-chat', messages, stream: false })
+          });
+          if (!response.ok) throw new Error(`HTTP 错误: ${response.status}`);
+          const data = await response.json();
+          const content = data.choices[0].message.content;
+          let cleaned = content.replace(/```json/gi, '').replace(/```/g, '').trim();
+          return JSON.parse(cleaned);
+        } catch (error) {
+          alert(`数据返回错误: ${error.message}\n请重试。`);
+          return null;
+        } finally {
+          loadingRef.value = false;
         }
+      }
 
-        function generateArticleWithWords() {
-          const wordList = settings.words.split('\n').map(w => w.trim()).filter(w => w);
-          if (wordList.length === 0) return alert('璇疯嚦灏戣緭鍏ヤ竴涓�鍗曡瘝銆�');
-          articleResult.value = ''; quizQuestions.value = []; clozeParts.value = []; isGeneratingArticle.value = true; currentView.value = 'article'; if (window.innerWidth <= 768) isSidebarOpen.value = false;
-          const systemPrompt = `浣犳槸涓€浣嶅痉璇�鏁欏笀銆傝�锋牴鎹�鍗曡瘝鍒楄〃鐢熸垚寰疯��闃呰�绘枃绔犮€傝�佹眰锛�1. 闅惧害 ${settings.level} 绛夌骇锛屽瓧鏁扮害 ${settings.wordCount} 璇嶃€�2. 蹇呴』鍖呭惈鏂囦腑鍗曡瘝骞朵弗鏍间娇鐢ㄦ牸寮� \`**寰锋枃鍗曡瘝**\` 楂樹寒銆俙;
-          fetchAIStream(
-            [{ role: 'system', content: systemPrompt }, { role: 'user', content: `寮€濮嬬敓鎴愶紝蹇呴』鍖呭惈锛歕n${wordList.join('\n')}` }],
-            (chunk) => { articleResult.value += chunk; },
-            () => { isGeneratingArticle.value = false; }
-          );
-        }
+      function generateArticleWithWords() {
+        const wordList = settings.words.split('\n').map(w => w.trim()).filter(w => w);
+        if (wordList.length === 0) return alert('请至少输入一个单词。');
+        articleResult.value = ''; quizQuestions.value = []; clozeParts.value = []; isGeneratingArticle.value = true; currentView.value = 'article'; if(window.innerWidth <= 768) isSidebarOpen.value = false; 
+        const systemPrompt = `你是一位德语教师。请根据单词列表生成德语阅读文章。要求：1. 难度 ${settings.level} 等级，字数约 ${settings.wordCount} 词。2. 必须包含文中单词并严格使用格式 \`**德文单词**\` 高亮。`;
+        fetchAIStream(
+          [{ role: 'system', content: systemPrompt }, { role: 'user', content: `开始生成，必须包含：\n${wordList.join('\n')}` }],
+          (chunk) => { articleResult.value += chunk; },
+          () => { isGeneratingArticle.value = false; }
+        );
+      }
 
-        function generateArticleWithTopic() {
-          const topic = settings.topic.trim();
-          if (!topic) return alert('璇峰厛鍦ㄨ緭鍏ユ�嗚緭鍏ヤ綘鎯抽槄璇荤殑鏂囩珷涓婚�樸€�');
-          articleResult.value = ''; quizQuestions.value = []; clozeParts.value = []; isGeneratingArticle.value = true; currentView.value = 'article'; if (window.innerWidth <= 768) isSidebarOpen.value = false;
+      function generateArticleWithTopic() {
+        const topic = settings.topic.trim();
+        if (!topic) return alert('请先在输入框输入你想阅读的文章主题。');
+        articleResult.value = ''; quizQuestions.value = []; clozeParts.value = []; isGeneratingArticle.value = true; currentView.value = 'article'; if(window.innerWidth <= 768) isSidebarOpen.value = false;
+        
+        const systemPrompt = `你是一位德语教师。请根据用户提供的提示词或主题生成一篇德语文章。要求：1. 难度 ${settings.level} 等级，字数约 ${settings.wordCount} 词。2. 把重要的 5-8 个词汇用 \`**德文单词**\` 格式高亮。`;
+        fetchAIStream(
+          [{ role: 'system', content: systemPrompt }, { role: 'user', content: `请以这个主题或提示词生成文章：${topic}` }],
+          (chunk) => { articleResult.value += chunk; },
+          () => { isGeneratingArticle.value = false; }
+        );
+      }
 
-          const systemPrompt = `浣犳槸涓€浣嶅痉璇�鏁欏笀銆傝�锋牴鎹�鐢ㄦ埛鎻愪緵鐨勬彁绀鸿瘝鎴栦富棰樼敓鎴愪竴绡囧痉璇�鏂囩珷銆傝�佹眰锛�1. 闅惧害 ${settings.level} 绛夌骇锛屽瓧鏁扮害 ${settings.wordCount} 璇嶃€�2. 鎶婇噸瑕佺殑 5-8 涓�璇嶆眹鐢� \`**寰锋枃鍗曡瘝**\` 鏍煎紡楂樹寒銆俙;
-          fetchAIStream(
-            [{ role: 'system', content: systemPrompt }, { role: 'user', content: `璇蜂互杩欎釜涓婚�樻垨鎻愮ず璇嶇敓鎴愭枃绔狅細${topic}` }],
-            (chunk) => { articleResult.value += chunk; },
-            () => { isGeneratingArticle.value = false; }
-          );
-        }
+      function generateTranslatedArticle() {
+        const content = settings.translateContent.trim();
+        if (!content) return alert('请先粘贴需要翻译的文章段落。');
+        
+        articleResult.value = ''; quizQuestions.value = []; clozeParts.value = []; isGeneratingArticle.value = true; currentView.value = 'article'; if(window.innerWidth <= 768) isSidebarOpen.value = false;
+        
+        const levelInstruction = settings.translateLevel === '原文直接翻译' 
+            ? '忠实于原文的语意和长短句结构进行直接翻译，无需刻意改写。' 
+            : `严格改写为完全符合 ${settings.translateLevel} 难度的德语文章。
+            对于A1/A2难度：必须将原文复杂的长句彻底拆解为简短的单句，绝不使用复杂的从句，将所有高阶或生僻词汇替换为当前等级学生能听懂的最基础日常词汇。
+            对于B1/B2难度：适量使用连词和从句，词汇达到中级水平即可。
+            对于C1/C2难度：大量使用复杂的长难句、被动语态、虚拟式及高级/学术表达。
+            在尽量不改变原文核心意思的前提下，大胆且彻底地重构句型和词汇以精准匹配 ${settings.translateLevel} 等级难度！千万不要逐字翻译！`;
 
-        function generateTranslatedArticle() {
-          const content = settings.translateContent.trim();
-          if (!content) return alert('璇峰厛绮樿创闇€瑕佺炕璇戠殑鏂囩珷娈佃惤銆�');
+        const systemPrompt = `你是一位德语教师和资深翻译专家。请将用户提供的文章转换为德语文章。
+要求：
+1. 难度/风格设定：${levelInstruction}
+2. 必须挑出转换后德文中的 5-8 个符合当前难度等级的【重点/新课标核心词汇】，并严格使用 \`**德文单词**\` 格式高亮展示出来，以便学生学习。
+3. 【极其重要】在德语正文全部结束之后，请换行使用分割线（例如：---），然后在分割线下方附上这段德语文章对应的完整且优美的中文翻译。`;
 
-          articleResult.value = ''; quizQuestions.value = []; clozeParts.value = []; isGeneratingArticle.value = true; currentView.value = 'article'; if (window.innerWidth <= 768) isSidebarOpen.value = false;
+        fetchAIStream(
+          [{ role: 'system', content: systemPrompt }, { role: 'user', content: content }],
+          (chunk) => { articleResult.value += chunk; },
+          () => { isGeneratingArticle.value = false; }
+        );
+      }
 
-          const levelInstruction = settings.translateLevel === '鍘熸枃鐩存帴缈昏瘧'
-            ? '蹇犲疄浜庡師鏂囩殑璇�鎰忓拰闀跨煭鍙ョ粨鏋勮繘琛岀洿鎺ョ炕璇戯紝鏃犻渶鍒绘剰鏀瑰啓銆�'
-            : `涓ユ牸鏀瑰啓涓哄畬鍏ㄧ�﹀悎 ${settings.translateLevel} 闅惧害鐨勫痉璇�鏂囩珷銆�
-            瀵逛簬A1/A2闅惧害锛氬繀椤诲皢鍘熸枃澶嶆潅鐨勯暱鍙ュ交搴曟媶瑙ｄ负绠€鐭�鐨勫崟鍙ワ紝缁濅笉浣跨敤澶嶆潅鐨勪粠鍙ワ紝灏嗘墍鏈夐珮闃舵垨鐢熷兓璇嶆眹鏇挎崲涓哄綋鍓嶇瓑绾у�︾敓鑳藉惉鎳傜殑鏈€鍩虹�€鏃ュ父璇嶆眹銆�
-            瀵逛簬B1/B2闅惧害锛氶€傞噺浣跨敤杩炶瘝鍜屼粠鍙ワ紝璇嶆眹杈惧埌涓�绾ф按骞冲嵆鍙�銆�
-            瀵逛簬C1/C2闅惧害锛氬ぇ閲忎娇鐢ㄥ�嶆潅鐨勯暱闅惧彞銆佽��鍔ㄨ��鎬併€佽櫄鎷熷紡鍙婇珮绾�/瀛︽湳琛ㄨ揪銆�
-            鍦ㄥ敖閲忎笉鏀瑰彉鍘熸枃鏍稿績鎰忔€濈殑鍓嶆彁涓嬶紝澶ц儐涓斿交搴曞湴閲嶆瀯鍙ュ瀷鍜岃瘝姹囦互绮惧噯鍖归厤 ${settings.translateLevel} 绛夌骇闅惧害锛佸崈涓囦笉瑕侀€愬瓧缈昏瘧锛乣;
-
-          const systemPrompt = `浣犳槸涓€浣嶅痉璇�鏁欏笀鍜岃祫娣辩炕璇戜笓瀹躲€傝�峰皢鐢ㄦ埛鎻愪緵鐨勬枃绔犺浆鎹�涓哄痉璇�鏂囩珷銆�
-瑕佹眰锛�
-1. 闅惧害/椋庢牸璁惧畾锛�${levelInstruction}
-2. 蹇呴』鎸戝嚭杞�鎹㈠悗寰锋枃涓�鐨� 5-8 涓�绗﹀悎褰撳墠闅惧害绛夌骇鐨勩€愰噸鐐�/鏂拌�炬爣鏍稿績璇嶆眹銆戯紝骞朵弗鏍间娇鐢� \`**寰锋枃鍗曡瘝**\` 鏍煎紡楂樹寒灞曠ず鍑烘潵锛屼互渚垮�︾敓瀛︿範銆�
-3. 銆愭瀬鍏堕噸瑕併€戝湪寰疯��姝ｆ枃鍏ㄩ儴缁撴潫涔嬪悗锛岃�锋崲琛屼娇鐢ㄥ垎鍓茬嚎锛堜緥濡傦細---锛夛紝鐒跺悗鍦ㄥ垎鍓茬嚎涓嬫柟闄勪笂杩欐�靛痉璇�鏂囩珷瀵瑰簲鐨勫畬鏁翠笖浼樼編鐨勪腑鏂囩炕璇戙€俙;
-
-          fetchAIStream(
-            [{ role: 'system', content: systemPrompt }, { role: 'user', content: content }],
-            (chunk) => { articleResult.value += chunk; },
-            () => { isGeneratingArticle.value = false; }
-          );
-        }
-
-        function startConversation() {
-          currentView.value = 'conversation';
-          if (window.innerWidth <= 768) isSidebarOpen.value = false;
+      function startConversation() {
+          currentView.value = 'conversation'; 
+          if(window.innerWidth <= 768) isSidebarOpen.value = false;
           conversationHistory.value = [];
           convReport.value = '';
           convInput.value = '';
           isConvLoading.value = true;
-
+          
           const topic = settings.convTopic.trim();
-          const topicPrompt = topic ? `鎴戜滑鐨勬儏鏅�瀵硅瘽涓婚�樻槸锛氣€�${topic}鈥濄€俙 : `璇蜂綘闅忔満鎸戦€変竴涓�璐磋繎鐪熷疄鏃ュ父鐢熸椿鎴栧痉璇�鍙ｈ��鑰冭瘯鐨勫満鏅�浣滀负瀵硅瘽涓婚�樸€俙;
-          const sysPrompt = `浣犳槸涓€涓�闈炲父涓撲笟涓斿弸鍠勭殑寰疯��澶栨暀銆傛垜浠�灏嗚繘琛屽満鏅�浜掑姩瀵硅瘽缁冧範銆�${topicPrompt}
-璇风洿鎺ョ敤寰疯��杩涜�屽紑鍦虹櫧锛屽彧闇€杈撳嚭浣犵殑绗�涓€鍙ワ紙鎴栧嚑鍙ワ級寰疯��鍙拌瘝鍗冲彲锛堜綘鍙�浠ョ畝鐭�璇存槑涓€涓嬫儏鏅�璁惧畾锛夈€傝�佹眰锛氳嚜鐒跺湴閬撱€備笉瑕佹彁鍓嶆浛鎴戠敓鎴愬洖澶嶏紝绛夊緟鎴戣緭鍏ャ€俙;
-
+          const topicPrompt = topic ? `我们的情景对话主题是：“${topic}”。` : `请你随机挑选一个贴近真实日常生活或德语口语考试的场景作为对话主题。`;
+          const sysPrompt = `你是一个非常专业且友善的德语外教。我们将进行场景互动对话练习。${topicPrompt}
+请直接用德语进行开场白，只需输出你的第一句（或几句）德语台词即可（你可以简短说明一下情景设定）。要求：自然地道。不要提前替我生成回复，等待我输入。`;
+          
           conversationHistory.value.push({ role: 'assistant', content: '', suggestion: '' });
           const msgIndex = 0;
-
+          
           fetchAIStream(
             [{ role: 'system', content: sysPrompt }],
             (chunk) => { conversationHistory.value[msgIndex].content += chunk; },
             () => { isConvLoading.value = false; }
           );
-        }
+      }
 
-        function sendConvMessage() {
+      function sendConvMessage() {
           if (!convInput.value.trim() || isConvLoading.value) return;
           conversationHistory.value.push({ role: 'user', content: convInput.value.trim() });
-          convInput.value = '';
+          convInput.value = ''; 
           isConvLoading.value = true;
           conversationHistory.value.push({ role: 'assistant', content: '', suggestion: '' });
           const msgIndex = conversationHistory.value.length - 1;
-
+          
           const historyForAI = conversationHistory.value.slice(0, -1).map(m => ({
-            role: m.role,
-            content: m.content
+              role: m.role,
+              content: m.content
           }));
-
-          const sysPrompt = `浣犳槸涓€涓�涓撲笟鐨勫痉璇�澶栨暀锛屾�ｅ湪鍜岀敤鎴疯繘琛屽満鏅�瀵硅瘽缁冧範銆�
-璇锋墽琛屼互涓嬩袱姝ユ搷浣滐紙蹇呴』涓ユ牸閬靛惊姝ゆ牸寮忚緭鍑猴級锛�
-1. 棣栧厛锛屾牴鎹�鐢ㄦ埛鐨勫洖澶嶏紝缁х画鑷�鐒朵笖鍦伴亾鐨勫痉璇�浜ゆ祦銆�
-2. 鐒跺悗锛屽繀椤绘崲琛屽苟杈撳嚭涓ユ牸鐨勫垎鍓叉爣璁帮細===SUGGESTION===
-3. 鍦ㄥ垎鍓叉爣璁颁笅鏂癸紝鐢ㄤ腑鏂囨寚鍑虹敤鎴峰垰鍒氶偅鍙ュ痉璇�杈撳叆涓�鐨勩€愯��娉曢敊璇�銆戞垨銆愪笉鑷�鐒剁殑鍦版柟銆戯紝骞剁粰鍑恒€愪慨鏀瑰缓璁�銆戝拰銆愭洿鍦伴亾鐨勫痉璇�琛ㄨ揪銆戙€傚�傛灉鐢ㄦ埛鐨勫彞瀛愰潪甯稿畬缇庯紝璇峰湪涓嬫柟缁欎簣鏄庣‘鐨勮〃鎵�銆備笉瑕佸甫浠讳綍Markdown浠ｇ爜鍧椾慨楗般€俙;
-
+          
+          const sysPrompt = `你是一个专业的德语外教，正在和用户进行场景对话练习。
+请执行以下两步操作（必须严格遵循此格式输出）：
+1. 首先，根据用户的回复，继续自然且地道的德语交流。
+2. 然后，必须换行并输出严格的分割标记：===SUGGESTION===
+3. 在分割标记下方，用中文指出用户刚刚那句德语输入中的【语法错误】或【不自然的地方】，并给出【修改建议】和【更地道的德语表达】。如果用户的句子非常完美，请在下方给予明确的表扬。不要带任何Markdown代码块修饰。`;
+          
           let fullText = '';
           fetchAIStream(
             [{ role: 'system', content: sysPrompt }, ...historyForAI],
-            (chunk) => {
-              fullText += chunk;
-              let parts = fullText.split('===SUGGESTION===');
-              conversationHistory.value[msgIndex].content = parts[0].trim();
-              if (parts.length > 1) {
-                conversationHistory.value[msgIndex].suggestion = "馃挕 **澶栨暀鐐硅瘎涓庝紭鍖栧缓璁�**锛歕n\n" + parts[1].trim();
-              }
+            (chunk) => { 
+                fullText += chunk;
+                let parts = fullText.split('===SUGGESTION===');
+                conversationHistory.value[msgIndex].content = parts[0].trim();
+                if(parts.length > 1) {
+                    conversationHistory.value[msgIndex].suggestion = "💡 **外教点评与优化建议**：\n\n" + parts[1].trim();
+                }
             },
-            () => {
-              isConvLoading.value = false;
-              setTimeout(() => { document.querySelector('.main-content').scrollTo({ top: document.querySelector('.main-content').scrollHeight, behavior: 'smooth' }); }, 100);
+            () => { 
+                isConvLoading.value = false; 
+                setTimeout(() => { document.querySelector('.main-content').scrollTo({ top: document.querySelector('.main-content').scrollHeight, behavior: 'smooth' }); }, 100);
             }
           );
-        }
+      }
 
-        function getConvHint() {
+      function getConvHint() {
           if (isConvLoading.value || conversationHistory.value.length === 0) return;
           isConvLoading.value = true;
           convInput.value = '';
-          const historyForAI = conversationHistory.value.map(m => ({ role: m.role, content: m.content }));
-          const sysPrompt = `璇锋牴鎹�浠ヤ笂瀹屾暣鐨勫�硅瘽涓婁笅鏂囷紝涓虹敤鎴凤紙user锛夌敓鎴愪竴鍙ヨ嚜鐒躲€佸湴閬撲笖绗﹀悎褰撳墠璇�澧冪殑寰疯��鍥炲�嶃€備綘鍙�闇€杈撳嚭杩欏彞璇濈殑寰疯��鍥炲�嶆枃鏈�锛屽苟闄勫甫鎷�鍙烽噷鐨勪腑鏂囩炕璇戙€備緥濡傦細Ich h盲tte gerne einen Kaffee. (鎴戞兂瑕佷竴鏉�鍜栧暋銆�)`;
-
+          const historyForAI = conversationHistory.value.map(m => ({role: m.role, content: m.content}));
+          const sysPrompt = `请根据以上完整的对话上下文，为用户（user）生成一句自然、地道且符合当前语境的德语回复。你只需输出这句话的德语回复文本，并附带括号里的中文翻译。例如：Ich hätte gerne einen Kaffee. (我想要一杯咖啡。)`;
+          
           fetchAIStream(
             [...historyForAI, { role: 'system', content: sysPrompt }],
             (chunk) => { convInput.value += chunk; },
             () => { isConvLoading.value = false; }
           );
-        }
+      }
 
-        function endConversation() {
+      function endConversation() {
           if (isConvLoading.value || conversationHistory.value.length === 0) return;
           isConvLoading.value = true;
+          
+          const chatLog = conversationHistory.value.map(m => `${m.role === 'user' ? '学生发言' : '外教发言'}: ${m.content}`).join('\n');
+          
+          const sysPrompt = `你现在是一位客观、专业的德语口语评估专家。请脱离刚才的情景角色，根据以下的完整对话记录，专门针对【学生】的所有发言内容给出一份复盘评估报告。
+【绝对禁止】继续扮演外教和学生对话！你只需输出评估报告！
 
-          const chatLog = conversationHistory.value.map(m => `${m.role === 'user' ? '瀛︾敓鍙戣█' : '澶栨暀鍙戣█'}: ${m.content}`).join('\n');
-
-          const sysPrompt = `浣犵幇鍦ㄦ槸涓€浣嶅�㈣�傘€佷笓涓氱殑寰疯��鍙ｈ��璇勪及涓撳�躲€傝�疯劚绂诲垰鎵嶇殑鎯呮櫙瑙掕壊锛屾牴鎹�浠ヤ笅鐨勫畬鏁村�硅瘽璁板綍锛屼笓闂ㄩ拡瀵广€愬�︾敓銆戠殑鎵€鏈夊彂瑷€鍐呭�圭粰鍑轰竴浠藉�嶇洏璇勪及鎶ュ憡銆�
-銆愮粷瀵圭�佹��銆戠户缁�鎵�婕斿�栨暀鍜屽�︾敓瀵硅瘽锛佷綘鍙�闇€杈撳嚭璇勪及鎶ュ憡锛�
-
-銆愬�硅瘽璁板綍銆�
+【对话记录】
 ${chatLog}
 
-銆愭姤鍛婂繀椤讳弗鏍煎寘鍚�浠ヤ笅鏍煎紡鍜屽唴瀹广€�
-1. **鎬讳綋璇勪环**锛氱畝璇勫�︾敓杩欐�＄殑琛ㄧ幇銆�
-2. **闇€瑕佹敞鎰忕殑閿欒��/琛ㄨ揪**锛氾紙璇蜂互鈥滀綘鐨勮繖娆″�硅瘽缁冧範瀛樺湪鍑犲�勯敊璇�/闇€瑕佹敞鎰忕殑鍦版柟锛氣€濅负寮€澶达級鏄庣‘鎻愬彇鍑哄�︾敓鍦ㄦ暣涓�瀵硅瘽涓�鐘�鐨勮��娉曢敊璇�锛屾垨鑰呬笉澶熷湴閬撶殑鐢熺‖琛ㄨ揪锛屽苟蹇呴』缁欏嚭姝ｇ‘鐨勪慨鏀圭ず鑼冦€傚�傛灉瀹屽叏娌℃湁閿欒��涔熻�锋槑纭�鎸囧嚭銆�
-3. **鏀硅繘鏂瑰悜**锛氾紙璇蜂互鈥滄敼杩涙柟鍚戯細鈥濅负寮€澶达級涓哄�︾敓鎻愪緵浠ュ悗鐨勫�︿範寤鸿��鍜岄渶瑕佸己鍖栫殑鐭ヨ瘑鐐广€俙;
-
+【报告必须严格包含以下格式和内容】
+1. **总体评价**：简评学生这次的表现。
+2. **需要注意的错误/表达**：（请以“你的这次对话练习存在几处错误/需要注意的地方：”为开头）明确提取出学生在整个对话中犯的语法错误，或者不够地道的生硬表达，并必须给出正确的修改示范。如果完全没有错误也请明确指出。
+3. **改进方向**：（请以“改进方向：”为开头）为学生提供以后的学习建议和需要强化的知识点。`;
+          
           fetchAIStream(
-            [{ role: 'system', content: '浣犳槸涓撲笟鐨勫痉璇�鍙ｈ��璇勪及涓撳�讹紝缁濅笉杩涜�屽�硅瘽鎵�婕旓紝鍙�杈撳嚭璇勪及鎶ュ憡銆�' }, { role: 'user', content: sysPrompt }],
+            [{ role: 'system', content: '你是专业的德语口语评估专家，绝不进行对话扮演，只输出评估报告。' }, { role: 'user', content: sysPrompt }],
             (chunk) => { convReport.value += chunk; },
-            () => {
-              isConvLoading.value = false;
-              setTimeout(() => { document.querySelector('.main-content').scrollTo({ top: document.querySelector('.main-content').scrollHeight, behavior: 'smooth' }); }, 100);
+            () => { 
+                isConvLoading.value = false; 
+                setTimeout(() => { document.querySelector('.main-content').scrollTo({ top: document.querySelector('.main-content').scrollHeight, behavior: 'smooth' }); }, 100);
             }
           );
-        }
+      }
 
-        async function generateQuestions() {
-          if (!articleResult.value) return;
-          currentView.value = 'article'; if (window.innerWidth <= 768) isSidebarOpen.value = false;
-          const prompt = `浣犳槸涓€涓�涓撲笟鐨勫痉璇�鑰佸笀銆傝�锋牴鎹�浠ヤ笅寰疯��鏂囩珷鍑� ${settings.questionCount} 閬撻槄璇荤悊瑙ｉ�樸€傞�樺瀷涓哄崟椤归€夋嫨棰橈紙4涓�閫夐」锛夋垨鍒ゆ柇棰橈紙Richtig/Falsch锛夛紝瀹屽叏妯℃嫙姝屽痉鑰冭瘯鎴朤estDaF鏍煎紡銆�
-璇蜂弗鏍艰繑鍥� JSON 鏁扮粍鏍煎紡锛岀粷涓嶈兘鍖呭惈 Markdown 鏍囪�般€乗`\`\`json 绗﹀彿鎴栦换浣曢�濆�栨枃瀛楋紒
-JSON 缁撴瀯蹇呴』鏄�锛�
+      async function generateQuestions() {
+        if (!articleResult.value) return;
+        currentView.value = 'article'; if(window.innerWidth <= 768) isSidebarOpen.value = false;
+        const prompt = `你是一个专业的德语老师。请根据以下德语文章出 ${settings.questionCount} 道阅读理解题。题型为单项选择题（4个选项）或判断题（Richtig/Falsch），完全模拟歌德考试或TestDaF格式。
+请严格返回 JSON 数组格式，绝不能包含 Markdown 标记、\`\`\`json 符号或任何额外文字！
+JSON 结构必须是：
 [
   {
-    "question": "寰疯��棰樼洰鍐呭��",
-    "options": ["閫夐」A鐨勬枃鏈�", "閫夐」B鐨勬枃鏈�", "閫夐」C鐨勬枃鏈�", "閫夐」D鐨勬枃鏈�"],
-    "answer": "姝ｇ‘閫夐」鐨勫畬鏁存枃鏈�",
-    "explanation": "涓�鏂囪В鏋愶細涓轰粈涔堥€夎繖涓�绛旀��"
+    "question": "德语题目内容",
+    "options": ["选项A的文本", "选项B的文本", "选项C的文本", "选项D的文本"],
+    "answer": "正确选项的完整文本",
+    "explanation": "中文解析：为什么选这个答案"
   }
 ]
-鏂囩珷鍐呭�瑰�備笅锛歕n${articleResult.value}`;
+文章内容如下：\n${articleResult.value}`;
 
-          const result = await fetchAIJson([{ role: 'system', content: prompt }], isGeneratingQuestions);
-          if (result && Array.isArray(result)) {
+        const result = await fetchAIJson([{ role: 'system', content: prompt }], isGeneratingQuestions);
+        if (result && Array.isArray(result)) {
             quizQuestions.value = result.map(q => ({
-              ...q,
-              userAnswer: '',
-              showResult: false
+                ...q,
+                userAnswer: '',
+                showResult: false
             }));
             setTimeout(() => { document.querySelector('.main-content').scrollTo({ top: document.querySelector('.main-content').scrollHeight, behavior: 'smooth' }); }, 300);
-          }
         }
+      }
 
-        function submitQuiz() {
-          quizQuestions.value.forEach(q => q.showResult = true);
-        }
+      function submitQuiz() {
+        quizQuestions.value.forEach(q => q.showResult = true);
+      }
 
-        async function generateCloze() {
+      async function generateCloze() {
           if (!articleResult.value) return;
-          currentView.value = 'cloze'; if (window.innerWidth <= 768) isSidebarOpen.value = false;
+          currentView.value = 'cloze'; if(window.innerWidth <= 768) isSidebarOpen.value = false;
           clozeParts.value = [];
+          
+          const prompt = `你是一个德语老师。请根据以下德语文章生成一段完形填空。
+【核心要求】：请**且仅请**将文章中已经被 \`**\` 符号包裹的高亮单词（例如 **德文单词**）作为挖空对象。坚决不要自己随意挑选或额外增加其他单词挖空！有多少个 \`**\` 高亮单词，就挖多少个空。
 
-          const prompt = `浣犳槸涓€涓�寰疯��鑰佸笀銆傝�锋牴鎹�浠ヤ笅寰疯��鏂囩珷鐢熸垚涓€娈靛畬褰㈠～绌恒€�
-銆愭牳蹇冭�佹眰銆戯細璇�**涓斾粎璇�**灏嗘枃绔犱腑宸茬粡琚� \`**\` 绗﹀彿鍖呰９鐨勯珮浜�鍗曡瘝锛堜緥濡� **寰锋枃鍗曡瘝**锛変綔涓烘寲绌哄�硅薄銆傚潥鍐充笉瑕佽嚜宸遍殢鎰忔寫閫夋垨棰濆�栧�炲姞鍏朵粬鍗曡瘝鎸栫┖锛佹湁澶氬皯涓� \`**\` 楂樹寒鍗曡瘝锛屽氨鎸栧�氬皯涓�绌恒€�
-
-瑕佹眰锛�
-1. 涓ユ牸杩斿洖 JSON 鏍煎紡锛屼笉瑕佹湁浠讳綍 Markdown 鏍囪�版垨浠ｇ爜鍧楃�﹀彿锛堝�� \`\`\`json 锛夈€�
-2. JSON 鏍煎紡蹇呴』鏄�锛�
+要求：
+1. 严格返回 JSON 格式，不要有任何 Markdown 标记或代码块符号（如 \`\`\`json ）。
+2. JSON 格式必须是：
 {
-  "text": "杩欐槸甯︽湁鍗犱綅绗︾殑寰疯��鏂囩珷鐗囨�点€傚崰浣嶇�﹁�蜂弗鏍肩敤 {{0}}, {{1}}, {{2}} 琛ㄧず銆傝�蜂繚鐣欏師鏂囩殑鎹㈣�屻€傛敞鎰忥細鍘熸枃绔犱腑琚�鎸栫┖鐨� **鍗曡瘝** 浼氳��鏇挎崲涓哄�瑰簲鐨勫崰浣嶇�︼紝涓嶈�佷繚鐣� ** 绗﹀彿銆�",
+  "text": "这是带有占位符的德语文章片段。占位符请严格用 {{0}}, {{1}}, {{2}} 表示。请保留原文的换行。注意：原文章中被挖空的 **单词** 会被替换为对应的占位符，不要保留 ** 符号。",
   "blanks": [
-     { "answer": "琚�鎸栫┖鐨勫痉鏂囧師璇嶏紙鍗冲師鏈�琚� ** 鍖呰９鐨勯珮浜�鍗曡瘝锛�", "zh": "璇ヨ瘝鍦ㄨ繖閲岀殑涓�鏂囬噴涔�" }
+     { "answer": "被挖空的德文原词（即原本被 ** 包裹的高亮单词）", "zh": "该词在这里的中文释义" }
   ]
 }
 
-鏂囩珷鍐呭�癸細\n${articleResult.value}`;
+文章内容：\n${articleResult.value}`;
 
           const result = await fetchAIJson([{ role: 'system', content: prompt }], isGeneratingCloze);
           if (result && result.text && Array.isArray(result.blanks)) {
-            result.blanks.forEach(b => { b.userInput = ''; b.status = null; });
-            clozeData.value = result;
-
-            const parts = [];
-            const regex = /\{\{\s*(\d+)\s*\}\}/g;
-            let lastIndex = 0;
-            let match;
-            while ((match = regex.exec(result.text)) !== null) {
-              if (match.index > lastIndex) {
-                let textContent = result.text.substring(lastIndex, match.index).replace(/\n/g, '<br>');
-                textContent = textContent.replace(/\*\*(.*?)\*\*/g, '<strong style="color:#60a5fa;">$1</strong>');
-                parts.push({ type: 'text', content: textContent });
+              result.blanks.forEach(b => { b.userInput = ''; b.status = null; });
+              clozeData.value = result;
+              
+              const parts = [];
+              const regex = /\{\{\s*(\d+)\s*\}\}/g;
+              let lastIndex = 0;
+              let match;
+              while ((match = regex.exec(result.text)) !== null) {
+                  if (match.index > lastIndex) {
+                      let textContent = result.text.substring(lastIndex, match.index).replace(/\n/g, '<br>');
+                      textContent = textContent.replace(/\*\*(.*?)\*\*/g, '<strong style="color:#60a5fa;">$1</strong>');
+                      parts.push({ type: 'text', content: textContent });
+                  }
+                  parts.push({ type: 'blank', index: parseInt(match[1]) });
+                  lastIndex = regex.lastIndex;
               }
-              parts.push({ type: 'blank', index: parseInt(match[1]) });
-              lastIndex = regex.lastIndex;
-            }
-            if (lastIndex < result.text.length) {
-              let textContent = result.text.substring(lastIndex).replace(/\n/g, '<br>');
-              textContent = textContent.replace(/\*\*(.*?)\*\*/g, '<strong style="color:#60a5fa;">$1</strong>');
-              parts.push({ type: 'text', content: textContent });
-            }
-            clozeParts.value = parts;
+              if (lastIndex < result.text.length) {
+                  let textContent = result.text.substring(lastIndex).replace(/\n/g, '<br>');
+                  textContent = textContent.replace(/\*\*(.*?)\*\*/g, '<strong style="color:#60a5fa;">$1</strong>');
+                  parts.push({ type: 'text', content: textContent });
+              }
+              clozeParts.value = parts;
           }
-        }
+      }
 
-        function checkCloze(index) {
+      function checkCloze(index) {
           const blank = clozeData.value.blanks[index];
           if (!blank.userInput.trim()) {
-            blank.status = null;
-            return;
+              blank.status = null;
+              return;
           }
           if (blank.userInput.trim().toLowerCase() === blank.answer.trim().toLowerCase()) {
-            blank.status = 'correct';
+              blank.status = 'correct';
           } else {
-            blank.status = 'incorrect';
+              blank.status = 'incorrect';
           }
-        }
+      }
 
-        function showClozeAnswer(index) {
+      function showClozeAnswer(index) {
           const blank = clozeData.value.blanks[index];
           blank.userInput = blank.answer;
           checkCloze(index);
-        }
+      }
 
-        async function startVocabPractice() {
-          const inputWords = settings.words.split('\n').map(w => w.trim()).filter(w => w);
-          if (inputWords.length === 0) return alert('璇峰厛鍦ㄤ笂鏂瑰～鍏ヤ綘鎯冲�嶄範鐨勫痉鏂囧崟璇嶃€�');
-
-          currentView.value = 'vocab'; if (window.innerWidth <= 768) isSidebarOpen.value = false;
-          vocabPracticeList.value = [];
-
-          const prompt = `璇峰皢浠ヤ笅寰疯��鍗曡瘝缈昏瘧鎴愪腑鏂囥€�
-瑕佹眰锛氫弗鏍艰繑鍥� JSON 鏁扮粍鏍煎紡锛岀粷涓嶈兘鍖呭惈 Markdown 鏍囪�般€乗`\`\`json 绗﹀彿鎴栦换浣曢�濆�栨枃瀛楋紒蹇呴』涓ユ牸鎸夌収缁欏嚭鍗曡瘝鐨勯『搴忚繑鍥烇紝涓嶅彲鎵撲贡銆�
-銆愭瀬鍏堕噸瑕併€戯細濡傛灉缁欏嚭鐨勫崟璇嶆槸鍚嶈瘝锛屼綘杩斿洖鐨� "de" 瀛楁�靛繀椤讳笖鍙�鑳藉甫鏈夋�ｇ‘鐨勫畾鍐犺瘝锛坉er/die/das锛夛紝渚嬪�傦細"der Naturwissenschaftler"锛佺粷瀵逛笉鑳藉彧杩斿洖鍚嶈瘝鏈�韬�銆�
-JSON 缁撴瀯蹇呴』鏄�锛�
+      async function startVocabPractice() {
+        const inputWords = settings.words.split('\n').map(w => w.trim()).filter(w => w);
+        if (inputWords.length === 0) return alert('请先在上方填入你想复习的德文单词。');
+        
+        currentView.value = 'vocab'; if(window.innerWidth <= 768) isSidebarOpen.value = false;
+        vocabPracticeList.value = [];
+        
+        const prompt = `请将以下德语单词翻译成中文。
+要求：严格返回 JSON 数组格式，绝不能包含 Markdown 标记、\`\`\`json 符号或任何额外文字！必须严格按照给出单词的顺序返回，不可打乱。
+【极其重要】：如果给出的单词是名词，你返回的 "de" 字段必须且只能带有正确的定冠词（der/die/das），例如："der Naturwissenschaftler"！绝对不能只返回名词本身。
+JSON 结构必须是：
 [
-  { "de": "寰疯��鍘熻瘝锛堝悕璇嶅繀椤诲姞瀹氬啝璇嶏級", "zh": "涓�鏂囬噴涔�" }
+  { "de": "德语原词（名词必须加定冠词）", "zh": "中文释义" }
 ]
-鍗曡瘝鍒楄〃濡備笅锛歕n${inputWords.join('\n')}`;
+单词列表如下：\n${inputWords.join('\n')}`;
 
-          const result = await fetchAIJson([{ role: 'system', content: prompt }], isGeneratingVocabTest);
-          if (result && Array.isArray(result)) {
+        const result = await fetchAIJson([{ role: 'system', content: prompt }], isGeneratingVocabTest);
+        if (result && Array.isArray(result)) {
             vocabPracticeList.value = result.map(item => ({
-              de: item.de,
-              zh: item.zh,
-              userInput: '',
-              status: null
+                de: item.de,
+                zh: item.zh,
+                userInput: '',
+                status: null
             }));
-          }
         }
+      }
 
-        function checkVocab(item) {
-          if (!item.userInput.trim()) {
+      function checkVocab(item) {
+        if (!item.userInput.trim()) {
             item.status = null;
             return;
-          }
-          if (item.userInput.trim().toLowerCase() === item.de.trim().toLowerCase()) {
+        }
+        if (item.userInput.trim().toLowerCase() === item.de.trim().toLowerCase()) {
             item.status = 'correct';
-          } else {
+        } else {
             item.status = 'incorrect';
-          }
         }
+      }
 
-        function showVocabAnswer(item) {
-          item.userInput = item.de;
-          checkVocab(item);
-        }
+      function showVocabAnswer(item) {
+        item.userInput = item.de;
+        checkVocab(item);
+      }
 
-        function lookupWord() {
-          const word = dictInput.value.trim();
-          if (!word) return;
-          dictResult.value = ''; isDictLoading.value = true; currentLookupWord.value = word;
+      function lookupWord() {
+        const word = dictInput.value.trim();
+        if (!word) return;
+        dictResult.value = ''; isDictLoading.value = true; currentLookupWord.value = word; 
+        
+        const systemPrompt = `你是一个专业的德语词典。请查询用户输入的单词："${word}"。
+要求：
+1. 必须在返回的最开头指定单词的纯原形（不含任何冠词），严格使用格式：[BASE:单词原形]。警告：绝对不要输出任何前缀废话！
+2. 解释和例句按正常的文本排版。
+3. 【重要提示】凡是在“原形”或“解释”中出现德语名词及其冠词 (der/die/das) 时，必须严格按性别使用以下XML标记包裹它们：
+   阳性包裹：<M>der 名词</M>
+   阴性包裹：<F>die 名词</F>
+   中性包裹：<N>das 名词</N>
+   例如：<F>die Entscheidung</F>
 
-          const systemPrompt = `浣犳槸涓€涓�涓撲笟鐨勫痉璇�璇嶅吀銆傝�锋煡璇㈢敤鎴疯緭鍏ョ殑鍗曡瘝锛�"${word}"銆�
-瑕佹眰锛�
-1. 蹇呴』鍦ㄨ繑鍥炵殑鏈€寮€澶存寚瀹氬崟璇嶇殑绾�鍘熷舰锛堜笉鍚�浠讳綍鍐犺瘝锛夛紝涓ユ牸浣跨敤鏍煎紡锛歔BASE:鍗曡瘝鍘熷舰]銆傝�﹀憡锛氱粷瀵逛笉瑕佽緭鍑轰换浣曞墠缂€搴熻瘽锛�
-2. 瑙ｉ噴鍜屼緥鍙ユ寜姝ｅ父鐨勬枃鏈�鎺掔増銆�
-3. 銆愰噸瑕佹彁绀恒€戝嚒鏄�鍦ㄢ€滃師褰⑩€濇垨鈥滆В閲娾€濅腑鍑虹幇寰疯��鍚嶈瘝鍙婂叾鍐犺瘝 (der/die/das) 鏃讹紝蹇呴』涓ユ牸鎸夋€у埆浣跨敤浠ヤ笅XML鏍囪�板寘瑁瑰畠浠�锛�
-   闃虫€у寘瑁癸細<M>der 鍚嶈瘝</M>
-   闃存€у寘瑁癸細<F>die 鍚嶈瘝</F>
-   涓�鎬у寘瑁癸細<N>das 鍚嶈瘝</N>
-   渚嬪�傦細<F>die Entscheidung</F>
+请直接输出包含原形、释义、例句的文本，不要使用Markdown代码块包裹整体。`;
+        fetchAIStream([{ role: 'system', content: systemPrompt }], (chunk) => { dictResult.value += chunk; }, () => { isDictLoading.value = false; });
+      }
 
-璇风洿鎺ヨ緭鍑哄寘鍚�鍘熷舰銆侀噴涔夈€佷緥鍙ョ殑鏂囨湰锛屼笉瑕佷娇鐢∕arkdown浠ｇ爜鍧楀寘瑁规暣浣撱€俙;
-          fetchAIStream([{ role: 'system', content: systemPrompt }], (chunk) => { dictResult.value += chunk; }, () => { isDictLoading.value = false; });
-        }
+      function addDictWordToVocab() {
+        const word = extractBaseWord(dictResult.value, currentLookupWord.value);
+        if (word && !vocabList.value.includes(word)) vocabList.value.push(word);
+        dictResult.value = ''; dictInput.value = '';
+      }
+      function addTooltipWordToVocab() {
+        const word = extractBaseWord(tooltip.translation, tooltip.text);
+        if (word && !vocabList.value.includes(word)) vocabList.value.push(word);
+        closeTooltip();
+      }
 
-        function addDictWordToVocab() {
-          const word = extractBaseWord(dictResult.value, currentLookupWord.value);
-          if (word && !vocabList.value.includes(word)) vocabList.value.push(word);
-          dictResult.value = ''; dictInput.value = '';
-        }
-        function addTooltipWordToVocab() {
-          const word = extractBaseWord(tooltip.translation, tooltip.text);
-          if (word && !vocabList.value.includes(word)) vocabList.value.push(word);
-          closeTooltip();
-        }
+      function removeVocab(index) { vocabList.value.splice(index, 1); }
+      function clearVocab() { if (confirm("确定要清空所有生词吗？此操作不可逆。")) vocabList.value = []; }
+      function exportVocab() {
+        if (vocabList.value.length === 0) return;
+        const textContent = vocabList.value.join('\n');
+        const blob = new Blob([textContent], { type: 'text/plain;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a'); a.href = url; a.download = '德语生词本.txt';
+        document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
+      }
+      function isSingleWord(text) { return !text.trim().includes(' '); }
 
-        function removeVocab(index) { vocabList.value.splice(index, 1); }
-        function clearVocab() { if (confirm("纭�瀹氳�佹竻绌烘墍鏈夌敓璇嶅悧锛熸�ゆ搷浣滀笉鍙�閫嗐€�")) vocabList.value = []; }
-        function exportVocab() {
-          if (vocabList.value.length === 0) return;
-          const textContent = vocabList.value.join('\n');
-          const blob = new Blob([textContent], { type: 'text/plain;charset=utf-8' });
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement('a'); a.href = url; a.download = '寰疯��鐢熻瘝鏈�.txt';
-          document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
-        }
-        function isSingleWord(text) { return !text.trim().includes(' '); }
+      function handleSelection(e) {
+        if (e && e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
+        
+        setTimeout(() => {
+          const selection = window.getSelection();
+          const text = selection.toString().trim();
+          if (!text) return;
 
-        function handleSelection(e) {
-          if (e && e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
+          if (tooltip.visible && tooltip.text === text) return;
+          
+          const range = selection.getRangeAt(0);
+          const rect = range.getBoundingClientRect();
+          
+          tooltip.visible = true; 
+          tooltip.isLoading = true; 
+          tooltip.translation = ''; 
+          tooltip.text = text;
+          
+          let targetX = rect.left + rect.width / 2;
+          targetX = Math.max(200, Math.min(targetX, window.innerWidth - 200));
+          tooltip.x = targetX;
 
-          setTimeout(() => {
-            const selection = window.getSelection();
-            const text = selection.toString().trim();
-            if (!text) return;
-
-            if (tooltip.visible && tooltip.text === text) return;
-
-            const range = selection.getRangeAt(0);
-            const rect = range.getBoundingClientRect();
-
-            tooltip.visible = true;
-            tooltip.isLoading = true;
-            tooltip.translation = '';
-            tooltip.text = text;
-
-            let targetX = rect.left + rect.width / 2;
-            targetX = Math.max(200, Math.min(targetX, window.innerWidth - 200));
-            tooltip.x = targetX;
-
-            const spaceBelow = window.innerHeight - rect.bottom;
-            const spaceAbove = rect.top;
-
-            if (spaceBelow < 380 && spaceAbove > spaceBelow) {
+          const spaceBelow = window.innerHeight - rect.bottom;
+          const spaceAbove = rect.top;
+          
+          if (spaceBelow < 380 && spaceAbove > spaceBelow) {
               tooltip.isAbove = true;
               tooltip.y = window.innerHeight - rect.top + 10;
-            } else {
+          } else {
               tooltip.isAbove = false;
               tooltip.y = rect.bottom + 10;
-            }
+          }
 
-            if (translateAbortController) translateAbortController.abort();
-            translateAbortController = new AbortController();
+          if (translateAbortController) translateAbortController.abort();
+          translateAbortController = new AbortController();
 
-            const sysPrompt = `浣犳槸涓撲笟鐨勫痉璇�鑰佸笀銆傜炕璇戠敤鎴烽€変腑鐨勫痉鏂囥€�
+          const sysPrompt = `你是专业的德语老师。翻译用户选中的德文。
 
-濡傛灉鍙�鏈変竴涓�鍗曡瘝锛�
-1. 蹇呴』鍦ㄥ洖澶嶇殑鏈€寮€澶磋緭鍑鸿�ヨ瘝鐨勭函鍘熷舰锛堜笉鍚�鍐犺瘝锛岀敤浜庣郴缁熷綍鍏ョ敓璇嶆湰锛夛紝涓ユ牸浣跨敤鏍煎紡锛歔BASE:鍗曡瘝鍘熷舰]銆�
-2. 鎻愪緵璇ュ崟璇嶇殑鍘熷舰銆佽瘝鎬у拰閲婁箟銆�
-3. 閫犱竴涓�绠€鐭�鐨勫痉璇�渚嬪彞锛屽苟鎻愪緵涓�鏂囩炕璇戙€�
+如果只有一个单词：
+1. 必须在回复的最开头输出该词的纯原形（不含冠词，用于系统录入生词本），严格使用格式：[BASE:单词原形]。
+2. 提供该单词的原形、词性和释义。
+3. 造一个简短的德语例句，并提供中文翻译。
 
-濡傛灉鏄�澶氫釜鍗曡瘝锛堣瘝缁勬垨鍙ュ瓙锛夛細
-璇锋寜浠ヤ笅涓変釜閮ㄥ垎鎺掔増锛�
-銆愭暣浣撶炕璇戙€戝噯纭�鐨勪腑鏂囨剰鎬濄€�
-銆愮粨鏋勫垎鏋愩€戝垎鏋愬彞瀛愯��娉曠粨鏋勩€�
-銆愰€愯瘝瑙ｆ瀽銆戞媶瑙ｅ苟鍒嗗埆鍒楀嚭姣忎釜鍗曡瘝鐨勫痉璇�鍘熷舰銆佽瘝鎬у強涓�鏂囨剰鎬濄€�
+如果是多个单词（词组或句子）：
+请按以下三个部分排版：
+【整体翻译】准确的中文意思。
+【结构分析】分析句子语法结构。
+【逐词解析】拆解并分别列出每个单词的德语原形、词性及中文意思。
 
-銆愭牸寮忛珮浜�瑕佹眰銆戯細
-鏃犺�轰竴涓�鍗曡瘝杩樻槸闀垮彞锛屽彧瑕佸湪瑙ｆ瀽鍜岄噴涔変腑缁欏嚭浜嗗痉璇�鍚嶈瘝鍙婂叾鍐犺瘝 (der/die/das)锛屽氨蹇呴』涓ユ牸鎸夋€у埆浣跨敤浠ヤ笅XML鏍囪�板寘瑁瑰畠浠�锛�
-- 闃虫€э細<M>der 鍚嶈瘝</M>
-- 闃存€э細<F>die 鍚嶈瘝</F>
-- 涓�鎬э細<N>das 鍚嶈瘝</N>
-渚嬪�傦細<M>der Tisch</M>`;
-
-            fetchAIStream(
-              [{ role: 'system', content: sysPrompt }, { role: 'user', content: text }],
-              (chunk) => { tooltip.translation += chunk; },
-              () => { tooltip.isLoading = false; },
-              translateAbortController.signal
-            );
-          }, 200);
-        }
-
-        function closeTooltip() {
-          tooltip.visible = false;
-          if (translateAbortController) { translateAbortController.abort(); translateAbortController = null; }
-        }
-
-        function startNewChat() {
-          chatHistory.value = [{ role: 'assistant', content: 'Hallo! 闃呰�讳腑閬囧埌浠讳綍闂�棰橀兘鍙�浠ラ棶鎴戙€�' }];
-        }
-
-        function sendQuickPrompt(prompt) {
-          if (isChatLoading.value) return;
-          chatInput.value = prompt;
-          sendChatMessage();
-        }
-
-        function sendChatMessage() {
-          if (!chatInput.value.trim() || isChatLoading.value) return;
-          chatHistory.value.push({ role: 'user', content: chatInput.value });
-          chatInput.value = ''; isChatLoading.value = true;
-          chatHistory.value.push({ role: 'assistant', content: '' });
-          const assistantMsgIndex = chatHistory.value.length - 1;
-          scrollToBottom();
+【格式高亮要求】：
+无论一个单词还是长句，只要在解析和释义中给出了德语名词及其冠词 (der/die/das)，就必须严格按性别使用以下XML标记包裹它们：
+- 阳性：<M>der 名词</M>
+- 阴性：<F>die 名词</F>
+- 中性：<N>das 名词</N>
+例如：<M>der Tisch</M>`;
 
           fetchAIStream(
-            [{ role: 'system', content: `浣犳槸寰疯��涓撳�躲€傝В绛旂敤鎴峰熀浜庤繖绡囨枃绔犵殑闂�棰橈細\n\n${articleResult.value}` }, ...chatHistory.value.slice(0, -1)],
-            (chunk) => { chatHistory.value[assistantMsgIndex].content += chunk; scrollToBottom(); },
-            () => { isChatLoading.value = false; }
+            [{ role: 'system', content: sysPrompt }, { role: 'user', content: text }],
+            (chunk) => { tooltip.translation += chunk; },
+            () => { tooltip.isLoading = false; },
+            translateAbortController.signal
           );
-        }
-        function scrollToBottom() {
-          nextTick(() => { if (chatScrollRef.value) chatScrollRef.value.scrollTop = chatScrollRef.value.scrollHeight; });
-        }
-
-        return {
-          isSidebarOpen,
-          currentView,
-          genMode,
-          config, settings, articleResult, isGeneratingArticle,
-          quizQuestions, isGeneratingQuestions, generateQuestions, submitQuiz,
-          clozeData, clozeParts, isGeneratingCloze, generateCloze, checkCloze, showClozeAnswer,
-          dictInput, dictResult, isDictLoading, vocabList, lookupWord, addDictWordToVocab, removeVocab, clearVocab, exportVocab, addTooltipWordToVocab, isSingleWord,
-          vocabPracticeList, isGeneratingVocabTest, startVocabPractice, checkVocab, showVocabAnswer,
-          tooltip, handleSelection, closeTooltip, formattedTooltip, formattedDictResult,
-          isChatOpen, chatInput, isChatLoading, chatScrollRef, chatHistory, formatChatMessage, startNewChat, sendQuickPrompt,
-          formattedArticle, generateArticleWithWords, generateArticleWithTopic, generateTranslatedArticle, sendChatMessage,
-          conversationHistory, convInput, isConvLoading, convReport, startConversation, sendConvMessage, getConvHint, endConversation
-        };
+        }, 200); 
       }
-    }).mount('#app');
-  </script>
-</body>
 
+      function closeTooltip() {
+        tooltip.visible = false;
+        if (translateAbortController) { translateAbortController.abort(); translateAbortController = null; }
+      }
+
+      function startNewChat() {
+        chatHistory.value = [{ role: 'assistant', content: 'Hallo! 阅读中遇到任何问题都可以问我。' }];
+      }
+
+      function sendQuickPrompt(prompt) {
+        if (isChatLoading.value) return;
+        chatInput.value = prompt;
+        sendChatMessage();
+      }
+
+      function sendChatMessage() {
+        if (!chatInput.value.trim() || isChatLoading.value) return;
+        chatHistory.value.push({ role: 'user', content: chatInput.value });
+        chatInput.value = ''; isChatLoading.value = true;
+        chatHistory.value.push({ role: 'assistant', content: '' });
+        const assistantMsgIndex = chatHistory.value.length - 1;
+        scrollToBottom();
+
+        fetchAIStream(
+          [{ role: 'system', content: `你是德语专家。解答用户基于这篇文章的问题：\n\n${articleResult.value}` }, ...chatHistory.value.slice(0, -1)],
+          (chunk) => { chatHistory.value[assistantMsgIndex].content += chunk; scrollToBottom(); },
+          () => { isChatLoading.value = false; }
+        );
+      }
+      function scrollToBottom() {
+        nextTick(() => { if (chatScrollRef.value) chatScrollRef.value.scrollTop = chatScrollRef.value.scrollHeight; });
+      }
+
+      return {
+        isSidebarOpen,
+        currentView,
+        genMode, 
+        config, settings, articleResult, isGeneratingArticle,
+        quizQuestions, isGeneratingQuestions, generateQuestions, submitQuiz,
+        clozeData, clozeParts, isGeneratingCloze, generateCloze, checkCloze, showClozeAnswer,
+        dictInput, dictResult, isDictLoading, vocabList, lookupWord, addDictWordToVocab, removeVocab, clearVocab, exportVocab, addTooltipWordToVocab, isSingleWord,
+        vocabPracticeList, isGeneratingVocabTest, startVocabPractice, checkVocab, showVocabAnswer,
+        tooltip, handleSelection, closeTooltip, formattedTooltip, formattedDictResult,
+        isChatOpen, chatInput, isChatLoading, chatScrollRef, chatHistory, formatChatMessage, startNewChat, sendQuickPrompt,
+        formattedArticle, generateArticleWithWords, generateArticleWithTopic, generateTranslatedArticle, sendChatMessage,
+        conversationHistory, convInput, isConvLoading, convReport, startConversation, sendConvMessage, getConvHint, endConversation
+      };
+    }
+  }).mount('#app');
+</script>
+</body>
 </html>
